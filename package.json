@@ -1,0 +1,11 @@
+{
+  "name": "com.avmedvedskiy.localization",
+  "displayName": "Localization",
+  "version": "0.1.2",
+  "unity": "2018.4",
+  "author": "avmedvedskiy",
+  "description": "Localization",
+  "keywords": [
+    "localization"
+  ]
+}
