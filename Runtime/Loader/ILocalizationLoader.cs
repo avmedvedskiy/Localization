@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace LocalizationPackage
 {
