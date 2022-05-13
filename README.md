@@ -16,3 +16,5 @@ Use custom struct for string localization in Editor
 
 Contains a custom attribute for drawing sheets dropdown
 [LocalizationSheet]
+
+Also added async extention based on UniTask
