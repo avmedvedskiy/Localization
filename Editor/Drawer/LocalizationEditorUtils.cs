@@ -53,7 +53,7 @@ namespace LocalizationPackage
 
 
             string assetFilePath = Settings.GetAssetFilePath(sheetTitle);
-            var asset = AssetDatabase.LoadAssetAtPath<LocalizationAsset>($"{assetFilePath}{fileName}");
+            var asset = AssetDatabase.LoadAssetAtPath<LocalizationAsset>($"{assetFilePath}/{fileName}");
             _cacheLocalizationAssets.Add(fileName, asset);
             return asset;
         }
