@@ -1,7 +1,9 @@
+using System;
 using UnityEngine;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
+using Object = UnityEngine.Object;
 
 #if USE_ASYNCTASK
 using Cysharp.Threading.Tasks;
@@ -15,7 +17,7 @@ namespace LocalizationPackage
     public static class Localization
     {
         public static LanguageCode CurrentLanguage => _currentLanguage;
-        
+
         private const string LAST_LANGUAGE_KEY = "LastLanguage";
 
         //For settings, see TOOLS->LOCALIZATION
@@ -38,7 +40,9 @@ namespace LocalizationPackage
 
         private static List<LanguageCode> LanguageFilter => Settings.languageFilter;
         private static LanguageCode _currentLanguage = LanguageCode.N;
-        private static Dictionary<string, Dictionary<string, string>> _currentEntrySheets = new Dictionary<string, Dictionary<string, string>>();
+
+        private static Dictionary<string, Dictionary<string, string>> _currentEntrySheets =
+            new Dictionary<string, Dictionary<string, string>>();
 
         /// <summary>
         /// Init with default loader
@@ -48,7 +52,7 @@ namespace LocalizationPackage
             var code = GetDefaultLanguageCode();
             SwitchLanguage(code);
         }
-        
+
 #if USE_ASYNCTASK
         public static async UniTask InitAsync()
         {
@@ -123,10 +127,10 @@ namespace LocalizationPackage
                     Debug.LogError($"Switched to {_currentLanguage} instead");
                 }
             }
-            
+
             DoSwitch(code);
         }
-        
+
 #if USE_ASYNCTASK
         public static async UniTask SwitchLanguageAsync(LanguageCode code, bool ignoreCurrent = false)
         {
@@ -142,7 +146,7 @@ namespace LocalizationPackage
                     Debug.LogError($"Switched to {_currentLanguage} instead");
                 }
             }
-            
+
             await DoSwitchAsync(code);
         }
 #endif
@@ -161,14 +165,19 @@ namespace LocalizationPackage
 
             foreach (var sheetTitle in Settings.sheetInfos)
             {
-                var asset = GetLanguageFileAsset(_settings, _currentLanguage, sheetTitle.name);
-                if (asset != null)
-                    _currentEntrySheets[sheetTitle.name] = asset.values.ToDictionary(x => x.key, y => y.value);
+                LoadAndConvertFileAsset(_settings, _currentLanguage, sheetTitle.name, Convert);
+
+                void Convert(LocalizationAsset localizationAsset)
+                {
+                    if (localizationAsset != null)
+                        _currentEntrySheets[sheetTitle.name] =
+                            localizationAsset.values.ToDictionary(x => x.key, y => y.value);
+                }
             }
 
             OnLanguageSwitch();
         }
-        
+
 #if USE_ASYNCTASK
         private static async UniTask DoSwitchAsync(LanguageCode newLang)
         {
@@ -179,37 +188,66 @@ namespace LocalizationPackage
 
             foreach (var sheetTitle in Settings.sheetInfos)
             {
-                var asset = await GetLanguageFileAssetAsync(_settings, _currentLanguage, sheetTitle.name);
-                if (asset != null)
-                    _currentEntrySheets[sheetTitle.name] = asset.values.ToDictionary(x => x.key, y => y.value);
+                await LoadAndConvertFileAssetAsync(_settings, _currentLanguage, sheetTitle.name, Convert);
+
+                void Convert(LocalizationAsset localizationAsset)
+                {
+                    if (localizationAsset != null)
+                        _currentEntrySheets[sheetTitle.name] =
+                            localizationAsset.values.ToDictionary(x => x.key, y => y.value);
+                }
             }
 
             OnLanguageSwitch();
         }
 #endif
 
-        private static LocalizationAsset GetLanguageFileAsset(LocalizationSettings settings,LanguageCode code, string sheetTitle)
+#region LoadFilesRegion
+        
+        private static void LoadAndConvertFileAsset(LocalizationSettings settings, LanguageCode code, string sheetTitle,
+            Action<LocalizationAsset> convertMethod)
         {
             if (sheetTitle == settings.predefSheetTitle || string.IsNullOrEmpty(settings.addressableGroup))
-                return Resources.Load<LocalizationAsset>($"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}.asset");
-            
-#if  USE_ADDRESSABLES
-            return Addressables.LoadAssetAsync<LocalizationAsset>($"{code}_{sheetTitle}").WaitForCompletion();
+            {
+                LocalizationAsset file = Resources.Load<LocalizationAsset>(
+                    $"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}.asset");
+                convertMethod(file);
+                Resources.UnloadAsset(file);
+                return;
+            }
+
+#if USE_ADDRESSABLES
+            var op = Addressables.LoadAssetAsync<LocalizationAsset>($"{code}_{sheetTitle}");
+            LocalizationAsset adFile = op.WaitForCompletion();
+            convertMethod(adFile);
+            Addressables.Release(op);
 #endif
         }
 
-#if  USE_ASYNCTASK
-        private static async UniTask<LocalizationAsset> GetLanguageFileAssetAsync(LocalizationSettings settings,LanguageCode code, string sheetTitle)
+#if USE_ASYNCTASK
+        private static async UniTask LoadAndConvertFileAssetAsync(LocalizationSettings settings,
+            LanguageCode code, string sheetTitle,
+            Action<LocalizationAsset> convertMethod)
         {
             if (sheetTitle == settings.predefSheetTitle || string.IsNullOrEmpty(settings.addressableGroup))
-                return (LocalizationAsset)await Resources.LoadAsync<LocalizationAsset>($"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}.asset");
-            
-#if  USE_ADDRESSABLES
-            return await Addressables.LoadAssetAsync<LocalizationAsset>($"{code}_{sheetTitle}");
+            {
+                LocalizationAsset file = (LocalizationAsset)await Resources.LoadAsync<LocalizationAsset>(
+                    $"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}.asset");
+                convertMethod(file);
+                Resources.UnloadAsset(file);
+                return;
+            }
+
+#if USE_ADDRESSABLES
+            var op = Addressables.LoadAssetAsync<LocalizationAsset>($"{code}_{sheetTitle}");
+            LocalizationAsset adFile = await op;
+            convertMethod(adFile);
+            Addressables.Release(op);
 #endif
         }
-        
 #endif
+
+#endregion
 
 
         private static void OnLanguageSwitch()
