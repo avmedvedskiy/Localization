@@ -20,7 +20,7 @@ namespace LocalizationPackage.TextMeshPro
             UpdateText();
         }
         
-        private void OnDisable()
+        private void Start()
         {
             UpdateText();
         }
