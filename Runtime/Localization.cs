@@ -41,7 +41,7 @@ namespace LocalizationPackage
         private static List<LanguageCode> LanguageFilter => Settings.languageFilter;
         private static LanguageCode _currentLanguage = LanguageCode.N;
 
-        private static Dictionary<string, Dictionary<string, string>> _currentEntrySheets =
+        private static readonly Dictionary<string, Dictionary<string, string>> _currentEntrySheets =
             new Dictionary<string, Dictionary<string, string>>();
 
         /// <summary>
