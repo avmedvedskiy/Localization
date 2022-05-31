@@ -16,6 +16,8 @@ namespace LocalizationPackage
 {
     public static class Localization
     {
+        public static event Action OnLanguageChanged;
+
         public static LanguageCode CurrentLanguage => _currentLanguage;
 
         private const string LAST_LANGUAGE_KEY = "LastLanguage";
@@ -175,7 +177,7 @@ namespace LocalizationPackage
                 }
             }
 
-            OnLanguageSwitch();
+            OnLanguageChanged?.Invoke();
         }
 
 #if USE_ASYNCTASK
@@ -198,12 +200,12 @@ namespace LocalizationPackage
                 }
             }
 
-            OnLanguageSwitch();
+            OnLanguageChanged?.Invoke();
         }
 #endif
 
-#region LoadFilesRegion
-        
+        #region LoadFilesRegion
+
         private static void LoadAndConvertFileAsset(LocalizationSettings settings, LanguageCode code, string sheetTitle,
             Action<LocalizationAsset> convertMethod)
         {
@@ -248,34 +250,6 @@ namespace LocalizationPackage
 #endif
 
 #endregion
-
-
-        private static void OnLanguageSwitch()
-        {
-            Component[] components;
-
-            var mainCanvas = GameObject.FindWithTag("MainCanvas");
-            if (mainCanvas != null)
-            {
-                components = mainCanvas.GetComponentsInChildren(typeof(MonoBehaviour), true);
-            }
-            else
-            {
-                Debug.LogError(
-                    "Not Found MainCanvas Tag GameObject, it will be need for better performance when change localization");
-                return;
-            }
-
-            if (components != null)
-            {
-                for (int i = 0; i < components.Length; i++)
-                {
-                    var c = components[i];
-                    if (c != null && c is ILocalize localize)
-                        localize.OnLanguageSwitch();
-                }
-            }
-        }
 
         public static string Get(string key)
         {

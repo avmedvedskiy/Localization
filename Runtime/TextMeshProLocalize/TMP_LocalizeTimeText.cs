@@ -6,7 +6,7 @@ namespace LocalizationPackage.TextMeshPro
 {
     [RequireComponent(typeof(TextMeshProUGUI))]
     [AddComponentMenu("UI/TextMeshPro - Localize Time Text (UI)", 11)]
-    public class TMP_LocalizeTimeText : MonoBehaviour, ILocalize
+    public class TMP_LocalizeTimeText : MonoBehaviour
     {
         [SerializeField]
         private int _seconds;
@@ -21,19 +21,24 @@ namespace LocalizationPackage.TextMeshPro
         [SerializeField]
         private TextMeshProUGUI _textMeshPro;
 
-
-        public void OnLanguageSwitch()
-        {
-            UpdateText();
-        }
-        
         public void SetTime(int seconds)
         {
             _seconds = seconds;
             UpdateText();
         }
-        
-        private void OnDisable()
+
+        private void Start()
+        {
+            UpdateText();
+            Localization.OnLanguageChanged += OnLanguageChanged;
+        }
+
+        private void OnDestroy()
+        {
+            Localization.OnLanguageChanged -= OnLanguageChanged;
+        }
+
+        private void OnLanguageChanged()
         {
             UpdateText();
         }
