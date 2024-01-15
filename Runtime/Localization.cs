@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
-using Object = UnityEngine.Object;
+using System.Reflection;
 
 #if USE_ASYNCTASK
 using Cysharp.Threading.Tasks;
@@ -43,8 +43,7 @@ namespace LocalizationPackage
         private static List<LanguageCode> LanguageFilter => Settings.languageFilter;
         private static LanguageCode _currentLanguage = LanguageCode.N;
 
-        private static readonly Dictionary<string, Dictionary<string, string>> _currentEntrySheets =
-            new Dictionary<string, Dictionary<string, string>>();
+        private static readonly Dictionary<string, Dictionary<string, string>> _currentEntrySheets = new();
 
         /// <summary>
         /// Init with default loader
@@ -286,5 +285,16 @@ namespace LocalizationPackage
                 return false;
             return _currentEntrySheets[sheetTitle].ContainsKey(key);
         }
+
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void CleanUpFastMode()
+        {
+            var instanceField =
+                typeof(Localization).GetField("_currentLanguage",
+                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            instanceField?.SetValue(null, LanguageCode.N);
+        }
+#endif
     }
 }
