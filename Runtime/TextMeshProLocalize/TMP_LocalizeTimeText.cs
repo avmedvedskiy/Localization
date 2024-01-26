@@ -27,13 +27,13 @@ namespace LocalizationPackage.TextMeshPro
             UpdateText();
         }
 
-        private void Start()
+        private void OnEnable()
         {
             UpdateText();
             Localization.OnLanguageChanged += OnLanguageChanged;
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             Localization.OnLanguageChanged -= OnLanguageChanged;
         }

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine;
 
 namespace LocalizationPackage
 {
@@ -27,7 +28,7 @@ namespace LocalizationPackage
             get
             {
                 if(_sheetList == null)
-                    _sheetList = Settings.sheetInfos.Select(x => x.name).ToList();
+                    _sheetList = Settings.SheetInfos.Select(x => x.name).ToList();
                 return _sheetList;
             }
         }
@@ -45,7 +46,7 @@ namespace LocalizationPackage
         }
 
 
-        public static LocalizationAsset GetLanguageAsset(LanguageCode languageCode, string sheetTitle)
+        public static LocalizationAsset GetLanguageAsset(SystemLanguage languageCode, string sheetTitle)
         {
             string fileName = $"{languageCode}_{sheetTitle}.asset";
             if (_cacheLocalizationAssets.ContainsKey(fileName))
@@ -59,7 +60,7 @@ namespace LocalizationPackage
         }
 
 
-        public static string GetLocalizationText(LanguageCode languageCode, string sheetTitle, string key)
+        public static string GetLocalizationText(SystemLanguage languageCode, string sheetTitle, string key)
         {
             var asset = LocalizationEditorUtils.GetLanguageAsset(languageCode, sheetTitle);
             if (asset == null)

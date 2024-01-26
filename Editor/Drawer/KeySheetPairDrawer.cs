@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
@@ -46,7 +42,7 @@ namespace LocalizationPackage
             var labelPosition = initialPosition;
             labelPosition.y += position.height / 2f;
 
-            var localizationText = LocalizationEditorUtils.GetLocalizationText(Settings.editorPreviewCode, title, key);
+            var localizationText = LocalizationEditorUtils.GetLocalizationText(Settings.EditorPreviewCode, title, key);
 
             if (string.IsNullOrEmpty(localizationText))
             {

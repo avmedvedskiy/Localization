@@ -4,21 +4,16 @@ using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
-#if USE_ASYNCTASK
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-#endif
-#if USE_ADDRESSABLES
 using UnityEngine.AddressableAssets;
-#endif
 
 namespace LocalizationPackage
 {
     public static class Localization
     {
         public static event Action OnLanguageChanged;
-
-        public static LanguageCode CurrentLanguage => _currentLanguage;
+        public static SystemLanguage CurrentLanguage => _currentLanguage;
 
         private const string LAST_LANGUAGE_KEY = "LastLanguage";
 
@@ -40,81 +35,44 @@ namespace LocalizationPackage
             }
         }
 
-        private static List<LanguageCode> LanguageFilter => Settings.languageFilter;
-        private static LanguageCode _currentLanguage = LanguageCode.N;
+        private static List<SystemLanguage> LanguageFilter => Settings.LanguageFilter;
+        private static SystemLanguage _currentLanguage = SystemLanguage.English;
 
         private static readonly Dictionary<string, Dictionary<string, string>> _currentEntrySheets = new();
 
-        /// <summary>
-        /// Init with default loader
-        /// </summary>
-        public static void Init()
-        {
-            var code = GetDefaultLanguageCode();
-            SwitchLanguage(code);
-        }
 
-#if USE_ASYNCTASK
         public static async UniTask InitAsync()
         {
             var code = GetDefaultLanguageCode();
             await SwitchLanguageAsync(code);
         }
-#endif
 
-        private static LanguageCode GetDefaultLanguageCode()
+        private static SystemLanguage GetDefaultLanguageCode()
         {
-            bool useSystemLanguagePerDefault = Settings.useSystemLanguagePerDefault;
-            //ISO 639-1 (two characters). See: http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
-            LanguageCode useLang = Settings.defaultLangCode;
-
-            //See if we can use the last used language (playerprefs)
+            bool useSystemLanguagePerDefault = Settings.UseSystemLanguagePerDefault;
+            SystemLanguage useLang = Settings.DefaultLangCode;
+            
             string lastLang = PlayerPrefs.GetString(LAST_LANGUAGE_KEY, string.Empty);
-            LanguageCode lastLangCode = LocalizationSettings.GetLanguageEnum(lastLang);
+            SystemLanguage lastLangCode = LocalizationSettings.GetLanguageEnum(lastLang);
 
             if (!string.IsNullOrEmpty(lastLang) && IsLanguageAvailable(lastLangCode))
             {
                 return LocalizationSettings.GetLanguageEnum(lastLang);
             }
-
-            //See if we can use the local system language: if so, we overwrite useLang
+            
             if (useSystemLanguagePerDefault)
             {
-                //Attempt 1. Use Unity system lang
-                LanguageCode localLang = Application.systemLanguage.ToLanguageCode();
-                if (localLang == LanguageCode.N)
-                {
-                    //Attempt 2. Otherwise try .NET cultureinfo; doesnt work on mobile systems
-                    // Also returns EN (EN-US) on my dutch pc (interface is english but Country&region is Netherlands)
-                    //BUGGED IN MONO? See: http://forum.unity3d.com/threads/5452-Getting-user-s-language-preference
-                    string langIso = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
-                    if (langIso != "iv") //IV = InvariantCulture
-                        localLang = LocalizationSettings.GetLanguageEnum(langIso);
-                }
-
+                SystemLanguage localLang = Application.systemLanguage;
                 if (IsLanguageAvailable(localLang))
                 {
                     useLang = localLang;
-                }
-                else
-                {
-                    //hack for PT_BR
-                    //We dont have the local lang..try a few common exceptions
-                    if (localLang == LanguageCode.PT)
-                    {
-                        //  we didn't have PT, can we show PT_BR instead?
-                        if (LanguageFilter.Contains(LanguageCode.PT_BR))
-                        {
-                            useLang = LanguageCode.PT_BR;
-                        }
-                    }
                 }
             }
 
             return useLang;
         }
 
-        public static void SwitchLanguage(LanguageCode code, bool ignoreCurrent = false)
+        public static async UniTask SwitchLanguageAsync(SystemLanguage code, bool ignoreCurrent = false)
         {
             if (_currentLanguage == code && !ignoreCurrent)
                 return;
@@ -122,26 +80,7 @@ namespace LocalizationPackage
             if (!IsLanguageAvailable(code))
             {
                 Debug.LogError($"Could not switch from language {_currentLanguage} to {code}");
-                if (_currentLanguage == LanguageCode.N)
-                {
-                    code = LanguageFilter[0];
-                    Debug.LogError($"Switched to {_currentLanguage} instead");
-                }
-            }
-
-            DoSwitch(code);
-        }
-
-#if USE_ASYNCTASK
-        public static async UniTask SwitchLanguageAsync(LanguageCode code, bool ignoreCurrent = false)
-        {
-            if (_currentLanguage == code && !ignoreCurrent)
-                return;
-
-            if (!IsLanguageAvailable(code))
-            {
-                Debug.LogError($"Could not switch from language {_currentLanguage} to {code}");
-                if (_currentLanguage == LanguageCode.N)
+                if (_currentLanguage == SystemLanguage.English)
                 {
                     code = LanguageFilter[0];
                     Debug.LogError($"Switched to {_currentLanguage} instead");
@@ -150,112 +89,75 @@ namespace LocalizationPackage
 
             await DoSwitchAsync(code);
         }
-#endif
 
-        private static bool IsLanguageAvailable(LanguageCode code)
+        private static bool IsLanguageAvailable(SystemLanguage code)
         {
             return LanguageFilter.Contains(code);
         }
 
-        private static void DoSwitch(LanguageCode newLang)
+        private static async UniTask DoSwitchAsync(SystemLanguage newLang)
         {
             PlayerPrefs.SetString(LAST_LANGUAGE_KEY, newLang.ToString());
 
             _currentLanguage = newLang;
             _currentEntrySheets.Clear();
 
-            foreach (var sheetTitle in Settings.sheetInfos)
+            foreach (var sheetTitle in Settings.SheetInfos)
             {
-                LoadAndConvertFileAsset(_settings, _currentLanguage, sheetTitle.name, Convert);
-
-                void Convert(LocalizationAsset localizationAsset)
-                {
-                    if (localizationAsset != null)
-                        _currentEntrySheets[sheetTitle.name] =
-                            localizationAsset.values.ToDictionary(x => x.key, y => y.value);
-                }
+                await LoadAndConvertAsync(_settings, _currentLanguage, sheetTitle.name);
             }
 
             OnLanguageChanged?.Invoke();
         }
 
-#if USE_ASYNCTASK
-        private static async UniTask DoSwitchAsync(LanguageCode newLang)
+
+        private static async UniTask LoadAndConvertAsync(
+            LocalizationSettings settings,
+            SystemLanguage code,
+            string sheetTitle)
         {
-            PlayerPrefs.SetString(LAST_LANGUAGE_KEY, newLang.ToString());
-
-            _currentLanguage = newLang;
-            _currentEntrySheets.Clear();
-
-            foreach (var sheetTitle in Settings.sheetInfos)
+            if (sheetTitle == settings.PredefSheetTitle || string.IsNullOrEmpty(settings.AddressableGroup))
             {
-                await LoadAndConvertFileAssetAsync(_settings, _currentLanguage, sheetTitle.name, Convert);
-
-                void Convert(LocalizationAsset localizationAsset)
-                {
-                    if (localizationAsset != null)
-                        _currentEntrySheets[sheetTitle.name] =
-                            localizationAsset.values.ToDictionary(x => x.key, y => y.value);
-                }
+                await LoadFromResources(settings, code, sheetTitle);
             }
-
-            OnLanguageChanged?.Invoke();
+            else
+            {
+                await LoadFromAddressables(code, sheetTitle);
+            }
         }
-#endif
 
-        #region LoadFilesRegion
-
-        private static void LoadAndConvertFileAsset(LocalizationSettings settings, LanguageCode code, string sheetTitle,
-            Action<LocalizationAsset> convertMethod)
+        private static async UniTask LoadFromAddressables(SystemLanguage code, string sheetTitle)
         {
-            if (sheetTitle == settings.predefSheetTitle || string.IsNullOrEmpty(settings.addressableGroup))
-            {
-                LocalizationAsset file = Resources.Load<LocalizationAsset>(
-                    $"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}.asset");
-                convertMethod(file);
-                Resources.UnloadAsset(file);
-                return;
-            }
-
-#if USE_ADDRESSABLES
             var op = Addressables.LoadAssetAsync<LocalizationAsset>($"{code}_{sheetTitle}");
-            LocalizationAsset adFile = op.WaitForCompletion();
-            convertMethod(adFile);
+            var file = await op.ToUniTask();
+            ConvertAsset(file, sheetTitle);
             Addressables.Release(op);
-#endif
         }
 
-#if USE_ASYNCTASK
-        private static async UniTask LoadAndConvertFileAssetAsync(LocalizationSettings settings,
-            LanguageCode code, string sheetTitle,
-            Action<LocalizationAsset> convertMethod)
+        private static async UniTask LoadFromResources(
+            LocalizationSettings settings,
+            SystemLanguage code,
+            string sheetTitle)
         {
-            if (sheetTitle == settings.predefSheetTitle || string.IsNullOrEmpty(settings.addressableGroup))
-            {
-                LocalizationAsset file = (LocalizationAsset)await Resources.LoadAsync<LocalizationAsset>(
-                    $"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}.asset");
-                convertMethod(file);
-                Resources.UnloadAsset(file);
-                return;
-            }
-
-#if USE_ADDRESSABLES
-            var op = Addressables.LoadAssetAsync<LocalizationAsset>($"{code}_{sheetTitle}");
-            LocalizationAsset adFile = await op;
-            convertMethod(adFile);
-            Addressables.Release(op);
-#endif
+            var file = (LocalizationAsset)await Resources.LoadAsync<LocalizationAsset>(
+                $"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}.asset").ToUniTask();
+            ConvertAsset(file, sheetTitle);
+            Resources.UnloadAsset(file);
         }
-#endif
 
-#endregion
+        private static void ConvertAsset(LocalizationAsset localizationAsset, string name)
+        {
+            if (localizationAsset != null)
+                _currentEntrySheets[name] =
+                    localizationAsset.values.ToDictionary(x => x.key, y => y.value);
+        }
 
         public static string Get(string key)
         {
             if (_currentEntrySheets == null || _currentEntrySheets.Count == 0)
                 return $"#!#{key}#!#";
 
-            return Get(key, Settings.sheetInfos[0].name);
+            return Get(key, Settings.SheetInfos[0].name);
         }
 
 
@@ -266,9 +168,9 @@ namespace LocalizationPackage
                 return _currentEntrySheets[sheetTitle][key];
             }
 
-            if (Has(key, Settings.predefSheetTitle))
+            if (Has(key, Settings.PredefSheetTitle))
             {
-                return _currentEntrySheets[Settings.predefSheetTitle][key];
+                return _currentEntrySheets[Settings.PredefSheetTitle][key];
             }
 
             return $"#!#{key}#!#";
@@ -276,7 +178,7 @@ namespace LocalizationPackage
 
         public static bool Has(string key)
         {
-            return Has(key, Settings.sheetInfos[0].name);
+            return Has(key, Settings.SheetInfos[0].name);
         }
 
         private static bool Has(string key, string sheetTitle)
@@ -293,7 +195,7 @@ namespace LocalizationPackage
             var instanceField =
                 typeof(Localization).GetField("_currentLanguage",
                     BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-            instanceField?.SetValue(null, LanguageCode.N);
+            instanceField?.SetValue(null, SystemLanguage.English);
         }
 #endif
     }

@@ -31,7 +31,7 @@ namespace LocalizationPackage
             {
                 Debug.LogError("does not exist, Create new");
                 LocalizationSettings newSettings = ScriptableObject.CreateInstance<LocalizationSettings>();
-                
+
                 if (!Directory.Exists(LocalizationSettings.ASSET_RESOURCES_PATH))
                 {
                     Directory.CreateDirectory(LocalizationSettings.ASSET_RESOURCES_PATH);
@@ -51,7 +51,7 @@ namespace LocalizationPackage
         {
             _unresolvedErrors = 0;
         }
-        
+
         /// <summary>
         /// Can be used for autobuild system
         /// </summary>
@@ -63,7 +63,7 @@ namespace LocalizationPackage
 
         public void UpdateLocalization(bool displayProgressBar)
         {
-            foreach (var info in _settings.sheetInfos)
+            foreach (var info in _settings.SheetInfos)
             {
                 UpdateSheet(info, displayProgressBar);
             }
@@ -71,7 +71,7 @@ namespace LocalizationPackage
 
         public void UpdateSheet(LocalizationSettings.SheetInfo info, bool displayProgressBar)
         {
-            string url = $"{_settings.documentUrl}&gid={info.id}";
+            string url = $"{_settings.DocumentUrl}&gid={info.id}";
             var request = UnityWebRequest.Get(url);
             var async = request.SendWebRequest();
 
@@ -100,11 +100,11 @@ namespace LocalizationPackage
             }
         }
 
-        public void SaveSettingsFile(LanguageCode defaultLangCode, bool useSystemLang, string predefSheetTitle)
+        public void SaveSettingsFile(SystemLanguage defaultLangCode, bool useSystemLang, string predefSheetTitle)
         {
             if (_settings == null)
             {
-                _settings = (LocalizationSettings) ScriptableObject.CreateInstance(typeof(LocalizationSettings));
+                _settings = (LocalizationSettings)ScriptableObject.CreateInstance(typeof(LocalizationSettings));
                 string settingsPath = Path.GetDirectoryName(LocalizationSettings.SETTINGS_ASSET_PATH);
                 Directory.CreateDirectory(settingsPath);
                 if (!Directory.Exists(settingsPath))
@@ -117,13 +117,13 @@ namespace LocalizationPackage
                 }
             }
 
-            _settings.defaultLangCode = defaultLangCode;
-            _settings.useSystemLanguagePerDefault = useSystemLang;
-            _settings.predefSheetTitle = predefSheetTitle;
+            _settings.DefaultLangCode = defaultLangCode;
+            _settings.UseSystemLanguagePerDefault = useSystemLang;
+            _settings.PredefSheetTitle = predefSheetTitle;
 
             EditorUtility.SetDirty(_settings);
         }
-        
+
 
         void LoadCSV(Hashtable loadLanguages, Hashtable loadEntries, string data, string sheetTitle)
         {
@@ -150,7 +150,7 @@ namespace LocalizationPackage
                     for (int j = 1; j < (loadLanguages.Count + 1) && j < contents.Count; j++)
                     {
                         string content = contents[j];
-                        Hashtable hTable = (Hashtable) loadEntries[j];
+                        Hashtable hTable = (Hashtable)loadEntries[j];
                         if (hTable.ContainsKey(key))
                         {
                             Debug.LogError("ERROR: Double key [" + key + "] Sheet: " + sheetTitle);
@@ -180,10 +180,10 @@ namespace LocalizationPackage
             }
 
             //Verify loaded data
-            Hashtable sampleData = (Hashtable) loadEntries[1];
+            Hashtable sampleData = (Hashtable)loadEntries[1];
             for (int j = 2; j < loadEntries.Count; j++)
             {
-                Hashtable otherData = ((Hashtable) loadEntries[j]);
+                Hashtable otherData = ((Hashtable)loadEntries[j]);
 
                 foreach (DictionaryEntry item in otherData)
                 {
@@ -210,34 +210,33 @@ namespace LocalizationPackage
             {
                 LocalizationAsset asset = ScriptableObject.CreateInstance<LocalizationAsset>();
 
-                string langCode = ((string) langs.Value).TrimEnd(System.Environment.NewLine.ToCharArray());
+                string langCode = ((string)langs.Value).TrimEnd(System.Environment.NewLine.ToCharArray());
                 if (string.IsNullOrEmpty(langCode))
                     continue;
 
-                LanguageCode lc = (LanguageCode) System.Enum.Parse(typeof(LanguageCode), langCode);
-                if (!_settings.languageFilter.Exists(x => x == lc))
+                SystemLanguage lc = (SystemLanguage)System.Enum.Parse(typeof(SystemLanguage), langCode);
+                if (!_settings.LanguageFilter.Exists(x => x == lc))
                     continue;
-
-                int langID = (int) langs.Key;
-                Hashtable entries = (Hashtable) loadEntries[langID];
+                
+                
+                int langID = (int)langs.Key;
+                Hashtable entries = (Hashtable)loadEntries[langID];
                 foreach (DictionaryEntry item in entries)
                 {
                     asset.values.Add(new LocalizationAsset.LanguageData()
-                        {key = item.Key + "", value = (item.Value + "").UnescapeXML()});
+                        { key = item.Key + "", value = (item.Value + "").UnescapeXML() });
                 }
 
-                if (sheetTitle != _settings.predefSheetTitle)
+                if (sheetTitle != _settings.PredefSheetTitle)
                 {
-                    var path = $"{_settings.otherSheetsPath}/{langCode}_{sheetTitle}.asset";
+                    var path = $"{_settings.OtherSheetsPath}/{langCode}_{sheetTitle}.asset";
                     AssetDatabase.CreateAsset(asset, path);
-#if USE_ADDRESSABLES
-                    if(!string.IsNullOrEmpty(_settings.addressableGroup))
-                        AddAssetToGroup(path,_settings.addressableGroup, $"{langCode}_{sheetTitle}");
-#endif
+                    if (!string.IsNullOrEmpty(_settings.AddressableGroup))
+                        AddAssetToGroup(path, _settings.AddressableGroup, $"{langCode}_{sheetTitle}");
                 }
                 else
                 {
-                    var path = $"{_settings.predefPath}/{langCode}_{sheetTitle}.asset";
+                    var path = $"{_settings.PredefPath}/{langCode}_{sheetTitle}.asset";
                     AssetDatabase.CreateAsset(asset, path);
                 }
             }
@@ -246,24 +245,24 @@ namespace LocalizationPackage
             AssetDatabase.Refresh();
         }
 
-        private static void AddAssetToGroup(string path ,string groupName, string key = "")
+        private static void AddAssetToGroup(string path, string groupName, string key = "")
         {
             var group = AddressableAssetSettingsDefaultObject.Settings.FindGroup(groupName);
             if (!group)
             {
-                group = AddressableAssetSettingsDefaultObject.Settings.CreateGroup(groupName, false, false, true, null, typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema));
+                group = AddressableAssetSettingsDefaultObject.Settings.CreateGroup(groupName, false, false, true, null,
+                    typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema));
             }
+
             var assetPathToGuid = AssetDatabase.AssetPathToGUID(path);
-            var entry = AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(assetPathToGuid, group,
-                false,
-                true);
+            var entry = AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(assetPathToGuid, group);
             if (entry == null)
             {
                 Debug.LogError($"Addressable : can't add {path} to group {groupName}");
             }
             else
             {
-                if(!string.IsNullOrEmpty(key));
+                if (!string.IsNullOrEmpty(key)) ;
                 entry.address = key;
             }
         }
@@ -371,11 +370,8 @@ namespace LocalizationPackage
 
         void CreateLanguageFolder()
         {
-            CreateFolder(_settings.otherSheetsPath);
-#if  !USE_ADDRESSABLES
-            _settings.addressableGroup = string.Empty;
-#endif
-            CreateFolder(_settings.predefPath);
+            CreateFolder(_settings.OtherSheetsPath);
+            CreateFolder(_settings.PredefSheetTitle);
         }
 
         void CreateFolder(string path)

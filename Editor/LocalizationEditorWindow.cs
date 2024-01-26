@@ -26,7 +26,7 @@ namespace LocalizationPackage
 
         string _gDocsURL = string.Empty;
         bool _useSystemLang = true;
-        LanguageCode _defaultLanguageCode = LanguageCode.EN;
+        SystemLanguage _defaultLanguageCode = SystemLanguage.English;
         string _predefSheetTitle;
 
         bool _updatingTranslation;
@@ -55,14 +55,15 @@ namespace LocalizationPackage
             _scrollView = GUILayout.BeginScrollView(_scrollView);
             EditorGUILayout.ObjectField("Settings",_settings, typeof(LocalizationSettings),false);
             _useSystemLang = EditorGUILayout.Toggle("Try system language", _useSystemLang);
-            _defaultLanguageCode = (LanguageCode) EditorGUILayout.EnumPopup("Default language", _defaultLanguageCode);
+            _defaultLanguageCode = (SystemLanguage) EditorGUILayout.EnumPopup("Default language", _defaultLanguageCode);
 
-            int index = _settings.sheetInfos.FindIndex(x => x.name == _predefSheetTitle);
+            var sheetInfos = _settings.SheetInfos;
+            int index = sheetInfos.FindIndex(x => x.name == _predefSheetTitle);
             if (index > -1)
             {
                 index = EditorGUILayout.Popup("PreDefault Sheet Title", index,
-                    _settings.sheetInfos.Select(x => x.name).ToArray());
-                _predefSheetTitle = _settings.sheetInfos[index].name;
+                    sheetInfos.Select(x => x.name).ToArray());
+                _predefSheetTitle = sheetInfos[index].name;
             }
             else
             {
@@ -92,18 +93,19 @@ namespace LocalizationPackage
 
                 GUILayout.Space(10f);
 
-                int selectSheetIndex = _settings.sheetInfos.FindIndex(x => x.name == _selectedSheet);
+                var settingsSheetInfos = sheetInfos;
+                int selectSheetIndex = settingsSheetInfos.FindIndex(x => x.name == _selectedSheet);
                 selectSheetIndex = EditorGUILayout.Popup("Selected Sheet Title", selectSheetIndex,
-                    _settings.sheetInfos.Select(x => x.name).ToArray());
+                    settingsSheetInfos.Select(x => x.name).ToArray());
 
                 if (selectSheetIndex != -1)
-                    _selectedSheet = _settings.sheetInfos[selectSheetIndex].name;
+                    _selectedSheet = settingsSheetInfos[selectSheetIndex].name;
 
                 //update single sheet;
                 if (selectSheetIndex != -1 && GUILayout.Button("Update Selected translation"))
                 {
                     _updatingTranslation = true;
-                    var info = _settings.sheetInfos.FirstOrDefault(x => x.name == _selectedSheet);
+                    var info = settingsSheetInfos.FirstOrDefault(x => x.name == _selectedSheet);
                     UpdateSheet(info);
                 }
             }
@@ -130,10 +132,10 @@ namespace LocalizationPackage
 
             _settings = _tools.LoadSettings();
 
-            _useSystemLang = _settings.useSystemLanguagePerDefault;
-            _defaultLanguageCode = _settings.defaultLangCode;
-            _predefSheetTitle = _settings.predefSheetTitle;
-            _gDocsURL = _settings.documentUrl;
+            _useSystemLang = _settings.UseSystemLanguagePerDefault;
+            _defaultLanguageCode = _settings.DefaultLangCode;
+            _predefSheetTitle = _settings.PredefSheetTitle;
+            _gDocsURL = _settings.DocumentUrl;
         }
 
         void UpdateSheet(LocalizationSettings.SheetInfo info)
