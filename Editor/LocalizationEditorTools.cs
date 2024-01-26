@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
@@ -60,7 +61,7 @@ namespace LocalizationPackage
             LoadSettings();
             UpdateLocalization(false);
         }
-
+        
         public void UpdateLocalization(bool displayProgressBar)
         {
             foreach (var info in _settings.SheetInfos)
@@ -127,12 +128,12 @@ namespace LocalizationPackage
 
         void LoadCSV(Hashtable loadLanguages, Hashtable loadEntries, string data, string sheetTitle)
         {
-            List<string> lines = GetCVSLines(data);
+            List<string> lines = SplitCVSLines(data);
 
             for (int i = 0; i < lines.Count; i++)
             {
                 string line = lines[i];
-                List<string> contents = GetCVSLine(line);
+                List<string> contents = SplitCVSLine(line);
                 if (i == 0)
                 {
                     //Language titles
@@ -224,7 +225,7 @@ namespace LocalizationPackage
                 foreach (DictionaryEntry item in entries)
                 {
                     asset.values.Add(new LocalizationAsset.LanguageData()
-                        { key = item.Key + "", value = (item.Value + "").UnescapeXML() });
+                        { key = (string)item.Key, value = ((string)item.Value).UnescapeXML() });
                 }
 
                 if (sheetTitle != _settings.PredefSheetTitle)
@@ -268,104 +269,11 @@ namespace LocalizationPackage
         }
 
 
-        List<string> GetCVSLines(string data)
+        private List<string> SplitCVSLines(string data) => data.Split("\r\n").ToList();
+
+        List<string> SplitCVSLine(string line)
         {
-            List<string> lines = new List<string>();
-            int i = 0;
-            int searchCloseTags = 0;
-            int lastSentenceStart = 0;
-            while (i < data.Length)
-            {
-                if (data[i] == '"')
-                {
-                    if (searchCloseTags == 0)
-                        searchCloseTags++;
-                    else
-                        searchCloseTags--;
-                }
-                else if (data[i] == '\n')
-                {
-                    if (searchCloseTags == 0)
-                    {
-                        lines.Add(data.Substring(lastSentenceStart, i - lastSentenceStart));
-                        lastSentenceStart = i + 1;
-                    }
-                }
-
-                i++;
-            }
-
-            if (i - 1 > lastSentenceStart)
-            {
-                lines.Add(data.Substring(lastSentenceStart, i - lastSentenceStart));
-            }
-
-            return lines;
-        }
-
-        List<string> GetCVSLine(string line)
-        {
-            List<string> list = new List<string>();
-            int i = 0;
-            int searchCloseTags = 0;
-            int lastEntryBegin = 0;
-            while (i < line.Length)
-            {
-                if (line[i] == '"')
-                {
-                    if (searchCloseTags == 0)
-                        searchCloseTags++;
-                    else
-                        searchCloseTags--;
-                }
-                else if (line[i] == ',')
-                {
-                    if (searchCloseTags == 0)
-                    {
-                        list.Add(StripQuotes(line.Substring(lastEntryBegin, i - lastEntryBegin)));
-                        lastEntryBegin = i + 1;
-                    }
-                }
-
-                i++;
-            }
-
-            if (line.Length > lastEntryBegin)
-            {
-                list.Add(StripQuotes(line.Substring(lastEntryBegin))); //Add last entry
-            }
-
-            return list;
-        }
-
-        //Remove the double " that CVS adds inside the lines, and the two outer " as well
-        string StripQuotes(string input)
-        {
-            if (input.Length < 1 || input[0] != '"')
-                return input; //Not a " formatted line
-
-            string output = "";
-            ;
-            int i = 1;
-            bool allowNextQuote = false;
-            while (i < input.Length - 1)
-            {
-                string curChar = input[i] + "";
-                if (curChar == "\"")
-                {
-                    if (allowNextQuote)
-                        output += curChar;
-                    allowNextQuote = !allowNextQuote;
-                }
-                else
-                {
-                    output += curChar;
-                }
-
-                i++;
-            }
-
-            return output;
+            return line.Split(",").ToList();
         }
 
         void CreateLanguageFolder()

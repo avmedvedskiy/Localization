@@ -68,26 +68,6 @@ namespace LocalizationPackage
 
         public SystemLanguage EditorPreviewCode => _editorPreviewCode;
 
-        public static SystemLanguage GetLanguageEnum(string langCode)
-        {
-            langCode = langCode.ToUpper();
-            foreach (SystemLanguage item in Enum.GetValues(typeof(SystemLanguage)))
-            {
-                if (item.ToString() == langCode)
-                {
-                    return item;
-                }
-            }
-
-            Debug.LogError("ERORR: There is no language: [" + langCode + "]");
-            return SystemLanguage.English;
-        }
-
-        public string GetAssetFilePath(string sheetTitle)
-        {
-            if (sheetTitle == PredefSheetTitle)
-                return PredefPath;
-            return OtherSheetsPath;
-        }
+        public string GetAssetFilePath(string sheetTitle) => sheetTitle == PredefSheetTitle ? PredefPath : OtherSheetsPath;
     }
 }

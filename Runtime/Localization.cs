@@ -43,21 +43,18 @@ namespace LocalizationPackage
 
         public static async UniTask InitAsync()
         {
-            var code = GetDefaultLanguageCode();
-            await SwitchLanguageAsync(code);
+            await SwitchLanguageAsync(GetDefaultLanguageCode());
         }
 
         private static SystemLanguage GetDefaultLanguageCode()
         {
-            bool useSystemLanguagePerDefault = Settings.UseSystemLanguagePerDefault;
-            SystemLanguage useLang = Settings.DefaultLangCode;
+            var useSystemLanguagePerDefault = Settings.UseSystemLanguagePerDefault;
+            var defaultLangCode = Settings.DefaultLangCode;
             
-            string lastLang = PlayerPrefs.GetString(LAST_LANGUAGE_KEY, string.Empty);
-            SystemLanguage lastLangCode = LocalizationSettings.GetLanguageEnum(lastLang);
-
-            if (!string.IsNullOrEmpty(lastLang) && IsLanguageAvailable(lastLangCode))
+            var lastLang = (SystemLanguage)PlayerPrefs.GetInt(LAST_LANGUAGE_KEY, (int)SystemLanguage.English);
+            if (IsLanguageAvailable(lastLang))
             {
-                return LocalizationSettings.GetLanguageEnum(lastLang);
+                return lastLang;
             }
             
             if (useSystemLanguagePerDefault)
@@ -65,11 +62,11 @@ namespace LocalizationPackage
                 SystemLanguage localLang = Application.systemLanguage;
                 if (IsLanguageAvailable(localLang))
                 {
-                    useLang = localLang;
+                    return localLang;
                 }
             }
 
-            return useLang;
+            return defaultLangCode;
         }
 
         public static async UniTask SwitchLanguageAsync(SystemLanguage code, bool ignoreCurrent = false)
