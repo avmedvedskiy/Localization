@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -34,6 +35,11 @@ namespace LocalizationPackage.TextMeshPro
         private void UpdateText()
         {
             _textMeshPro.text = _localizationKey.ToString();
+        }
+
+        private void OnValidate()
+        {
+            _textMeshPro ??= GetComponent<TextMeshProUGUI>();
         }
     }
 }
