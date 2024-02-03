@@ -10,5 +10,7 @@
         {
             return Localization.Get(key, sheet);
         }
+
+        public bool IsNullOrEmpty() => string.IsNullOrEmpty(key);
     }
 }
