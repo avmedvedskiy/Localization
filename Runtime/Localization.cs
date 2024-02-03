@@ -136,10 +136,21 @@ namespace LocalizationPackage
             SystemLanguage code,
             string sheetTitle)
         {
-            var file = (LocalizationAsset)await Resources.LoadAsync<LocalizationAsset>(
-                $"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}.asset").ToUniTask();
+            var path = TrimResourcesPath($"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}");
+            var file = (LocalizationAsset)await Resources.LoadAsync<LocalizationAsset>(path).ToUniTask();
             ConvertAsset(file, sheetTitle);
             Resources.UnloadAsset(file);
+        }
+
+        private static string TrimResourcesPath(string path)
+        {
+            int index = path.IndexOf("/Resources/", StringComparison.OrdinalIgnoreCase);
+            if (index != -1)
+            {
+                return path.Substring(index + "/Resources/".Length);
+            }
+
+            return path;
         }
 
         private static void ConvertAsset(LocalizationAsset localizationAsset, string name)
