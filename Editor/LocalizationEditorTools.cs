@@ -279,7 +279,7 @@ namespace LocalizationPackage
         void CreateLanguageFolder()
         {
             CreateFolder(_settings.OtherSheetsPath);
-            CreateFolder(_settings.PredefSheetTitle);
+            CreateFolder(_settings.PredefPath);
         }
 
         void CreateFolder(string path)
