@@ -126,14 +126,14 @@ namespace LocalizationPackage
         }
 
 
-        void LoadCSV(Hashtable loadLanguages, Hashtable loadEntries, string data, string sheetTitle)
+        void LoadPage(Hashtable loadLanguages, Hashtable loadEntries, string data, string sheetTitle)
         {
-            List<string> lines = SplitCVSLines(data);
+            List<string> lines = SplitLines(data);
 
             for (int i = 0; i < lines.Count; i++)
             {
                 string line = lines[i];
-                List<string> contents = SplitCVSLine(line);
+                List<string> contents = SplitTSVLine(line);
                 if (i == 0)
                 {
                     //Language titles
@@ -171,7 +171,7 @@ namespace LocalizationPackage
             Hashtable loadLanguages = new Hashtable();
             Hashtable loadEntries = new Hashtable();
 
-            LoadCSV(loadLanguages, loadEntries, data, sheetTitle);
+            LoadPage(loadLanguages, loadEntries, data, sheetTitle);
 
             if (loadEntries.Count < 1)
             {
@@ -269,11 +269,11 @@ namespace LocalizationPackage
         }
 
 
-        private List<string> SplitCVSLines(string data) => data.Split("\r\n").ToList();
+        private List<string> SplitLines(string data) => data.Split("\r\n").ToList();
 
-        List<string> SplitCVSLine(string line)
+        List<string> SplitTSVLine(string line)
         {
-            return line.Split(",").ToList();
+            return line.Split("\t").ToList();
         }
 
         void CreateLanguageFolder()

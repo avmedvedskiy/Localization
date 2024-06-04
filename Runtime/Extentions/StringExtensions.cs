@@ -4,16 +4,15 @@ namespace LocalizationPackage
     {
         public static string UnescapeXML(this string s)
         {
-            if (string.IsNullOrEmpty(s)) return s;
-
-            string returnString = s;
-            returnString = returnString.Replace("&apos;", "'");
-            returnString = returnString.Replace("&quot;", "\"");
-            returnString = returnString.Replace("&gt;", ">");
-            returnString = returnString.Replace("&lt;", "<");
-            returnString = returnString.Replace("&amp;", "&");
-
-            return returnString;
+            if (string.IsNullOrEmpty(s))
+                return s;
+            
+            return s
+                .Replace("&apos;", "'")
+                .Replace("&quot;", "\"")
+                .Replace("&gt;", ">")
+                .Replace("&lt;", "<")
+                .Replace("&amp;", "&");
         }
     }
 }
