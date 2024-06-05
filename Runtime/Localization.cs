@@ -13,156 +13,54 @@ namespace LocalizationPackage
     public static class Localization
     {
         public static event Action OnLanguageChanged;
-        public static SystemLanguage CurrentLanguage => _currentLanguage;
+        public static SystemLanguage CurrentLanguage { get; private set; }
+        private static LocalizationSettings Settings => SettingsProvider.Settings;
 
-        private const string LAST_LANGUAGE_KEY = "LastLanguage";
+        private static readonly Dictionary<string, Dictionary<string, string>> _storage = new();
 
-        //For settings, see TOOLS->LOCALIZATION
-        private static LocalizationSettings _settings;
-
-        private static LocalizationSettings Settings
+        /// <summary>
+        /// Initialization with predefined sheet, and set current language
+        /// </summary>
+        public static void Init()
         {
-            get
-            {
-                //automatically load settings from resources if the pointer is null (to avoid null-ref-exceptions!)
-                if (_settings == null)
-                {
-                    _settings = Resources.Load<LocalizationSettings>(LocalizationSettings
-                        .SETTINGS_ASSET_RESOURCES_PATH);
-                }
+            CurrentLanguage = LanguageCodeStorage.GetLanguageCode();
+            _storage.Add(Settings.PredefSheetTitle, LocalizationLoader.LoadDefaultSheet(CurrentLanguage));
+        }
 
-                return _settings;
+        /// <summary>
+        /// Load all other sheets
+        /// </summary>
+        public static async UniTask LoadAsync()
+        {
+            foreach (var info in Settings.SheetInfos)
+            {
+                if (!_storage.ContainsKey(info.name))
+                    _storage.Add(info.name, await LocalizationLoader.LoadSheetAsync(CurrentLanguage, info.name));
             }
         }
 
-        private static List<SystemLanguage> LanguageFilter => Settings.LanguageFilter;
-        private static SystemLanguage _currentLanguage = SystemLanguage.English;
-
-        private static readonly Dictionary<string, Dictionary<string, string>> _currentEntrySheets = new();
-
-
+        /// <summary>
+        /// initialization and load all sheets, if using remote settings use Init and Load separately
+        /// </summary>
         public static async UniTask InitAsync()
         {
-            await SwitchLanguageAsync(GetDefaultLanguageCode());
+            Init();
+            await LoadAsync();
         }
 
-        private static SystemLanguage GetDefaultLanguageCode()
+        public static async UniTask SwitchLanguageAsync(SystemLanguage code)
         {
-            var useSystemLanguagePerDefault = Settings.UseSystemLanguagePerDefault;
-            var defaultLangCode = Settings.DefaultLangCode;
-            
-            var lastLang = (SystemLanguage)PlayerPrefs.GetInt(LAST_LANGUAGE_KEY, (int)SystemLanguage.English);
-            if (IsLanguageAvailable(lastLang))
-            {
-                return lastLang;
-            }
-            
-            if (useSystemLanguagePerDefault)
-            {
-                SystemLanguage localLang = Application.systemLanguage;
-                if (IsLanguageAvailable(localLang))
-                {
-                    return localLang;
-                }
-            }
-
-            return defaultLangCode;
-        }
-
-        public static async UniTask SwitchLanguageAsync(SystemLanguage code, bool ignoreCurrent = false)
-        {
-            if (_currentLanguage == code && !ignoreCurrent)
-                return;
-
-            if (!IsLanguageAvailable(code))
-            {
-                Debug.LogError($"Could not switch from language {_currentLanguage} to {code}");
-                if (_currentLanguage == SystemLanguage.English)
-                {
-                    code = LanguageFilter[0];
-                    Debug.LogError($"Switched to {_currentLanguage} instead");
-                }
-            }
-
-            await DoSwitchAsync(code);
-        }
-
-        private static bool IsLanguageAvailable(SystemLanguage code)
-        {
-            return LanguageFilter.Contains(code);
-        }
-
-        private static async UniTask DoSwitchAsync(SystemLanguage newLang)
-        {
-            PlayerPrefs.SetString(LAST_LANGUAGE_KEY, newLang.ToString());
-
-            _currentLanguage = newLang;
-            _currentEntrySheets.Clear();
-
-            foreach (var sheetTitle in Settings.SheetInfos)
-            {
-                await LoadAndConvertAsync(_settings, _currentLanguage, sheetTitle.name);
-            }
-
+            LanguageCodeStorage.SetLanguageCode(code);
+            CurrentLanguage = code;
+            _storage.Clear();
+            await LoadAsync();
             OnLanguageChanged?.Invoke();
         }
 
 
-        private static async UniTask LoadAndConvertAsync(
-            LocalizationSettings settings,
-            SystemLanguage code,
-            string sheetTitle)
-        {
-            if (sheetTitle == settings.PredefSheetTitle || string.IsNullOrEmpty(settings.AddressableGroup))
-            {
-                await LoadFromResources(settings, code, sheetTitle);
-            }
-            else
-            {
-                await LoadFromAddressables(code, sheetTitle);
-            }
-        }
-
-        private static async UniTask LoadFromAddressables(SystemLanguage code, string sheetTitle)
-        {
-            var op = Addressables.LoadAssetAsync<LocalizationAsset>($"{code}_{sheetTitle}");
-            var file = await op.ToUniTask();
-            ConvertAsset(file, sheetTitle);
-            Addressables.Release(op);
-        }
-
-        private static async UniTask LoadFromResources(
-            LocalizationSettings settings,
-            SystemLanguage code,
-            string sheetTitle)
-        {
-            var path = TrimResourcesPath($"{settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}");
-            var file = (LocalizationAsset)await Resources.LoadAsync<LocalizationAsset>(path).ToUniTask();
-            ConvertAsset(file, sheetTitle);
-            Resources.UnloadAsset(file);
-        }
-
-        private static string TrimResourcesPath(string path)
-        {
-            int index = path.IndexOf("/Resources/", StringComparison.OrdinalIgnoreCase);
-            if (index != -1)
-            {
-                return path.Substring(index + "/Resources/".Length);
-            }
-
-            return path;
-        }
-
-        private static void ConvertAsset(LocalizationAsset localizationAsset, string name)
-        {
-            if (localizationAsset != null)
-                _currentEntrySheets[name] =
-                    localizationAsset.values.ToDictionary(x => x.key, y => y.value);
-        }
-
         public static string Get(string key)
         {
-            if (_currentEntrySheets == null || _currentEntrySheets.Count == 0)
+            if (_storage == null || _storage.Count == 0)
                 return $"#!#{key}#!#";
 
             return Get(key, Settings.SheetInfos[0].name);
@@ -173,12 +71,12 @@ namespace LocalizationPackage
         {
             if (Has(key, sheetTitle))
             {
-                return _currentEntrySheets[sheetTitle][key];
+                return _storage[sheetTitle][key];
             }
 
             if (Has(key, Settings.PredefSheetTitle))
             {
-                return _currentEntrySheets[Settings.PredefSheetTitle][key];
+                return _storage[Settings.PredefSheetTitle][key];
             }
 
             return $"#!#{key}#!#";
@@ -191,19 +89,19 @@ namespace LocalizationPackage
 
         private static bool Has(string key, string sheetTitle)
         {
-            if (_currentEntrySheets == null || !_currentEntrySheets.ContainsKey(sheetTitle))
+            if (_storage == null || !_storage.ContainsKey(sheetTitle))
                 return false;
-            return _currentEntrySheets[sheetTitle].ContainsKey(key);
+            return _storage[sheetTitle].ContainsKey(key);
         }
-
+        
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void CleanUpFastMode()
         {
             var instanceField =
-                typeof(Localization).GetField("_currentLanguage",
+                typeof(Localization).GetField(nameof(_storage),
                     BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-            instanceField?.SetValue(null, SystemLanguage.English);
+            instanceField?.SetValue(null, new Dictionary<string, Dictionary<string, string>>());
         }
 #endif
     }

@@ -14,9 +14,9 @@ namespace LocalizationPackage.TextMeshPro
         
         [SerializeField]
         private TextMeshProUGUI _textMeshPro;
-        
 
-        public void OnLanguageChanged()
+
+        private void OnLanguageChanged()
         {
             UpdateText();
         }

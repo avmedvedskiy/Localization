@@ -29,6 +29,7 @@ namespace LocalizationPackage.Utilities
                     return GetHoursFormat(timeSpan, sheet);
                 case TimeFrom.Minutes:
                     return GetMinutesFormat(timeSpan, sheet);
+                case TimeFrom.Seconds:
                 default:
                     return GetSecondsFormat(timeSpan, sheet);
             }

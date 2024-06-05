@@ -12,6 +12,6 @@ namespace LocalizationPackage
             public string value;
         }
 
-        public List<LanguageData> values = new List<LanguageData>();
+        public List<LanguageData> values = new();
     }
 }
