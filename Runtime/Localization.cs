@@ -18,10 +18,7 @@ namespace LocalizationPackage
 
         private static readonly Dictionary<string, Dictionary<string, string>> _storage = new();
 
-        /// <summary>
-        /// Initialization with predefined sheet, and set current language
-        /// </summary>
-        public static void Init()
+        static Localization()
         {
             CurrentLanguage = LanguageCodeStorage.GetLanguageCode();
             _storage.Add(Settings.PredefSheetTitle, LocalizationLoader.LoadDefaultSheet(CurrentLanguage));
@@ -37,15 +34,6 @@ namespace LocalizationPackage
                 if (!_storage.ContainsKey(info.name))
                     _storage.Add(info.name, await LocalizationLoader.LoadSheetAsync(CurrentLanguage, info.name));
             }
-        }
-
-        /// <summary>
-        /// initialization and load all sheets, if using remote settings use Init and Load separately
-        /// </summary>
-        public static async UniTask InitAsync()
-        {
-            Init();
-            await LoadAsync();
         }
 
         public static async UniTask SwitchLanguageAsync(SystemLanguage code)

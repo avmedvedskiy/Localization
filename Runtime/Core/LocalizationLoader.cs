@@ -28,7 +28,7 @@ namespace LocalizationPackage
             SystemLanguage code, 
             string sheetTitle)
         {
-            var op = Addressables.LoadAssetAsync<LocalizationAsset>($"{code}_{sheetTitle}");
+            var op = Addressables.LoadAssetAsync<LocalizationAsset>($"{code}/{sheetTitle}.asset");
             var file = await op.ToUniTask();
             var values =  ConvertAsset(file);
             Addressables.Release(op);
@@ -40,9 +40,8 @@ namespace LocalizationPackage
             SystemLanguage code,
             string sheetTitle)
         {
-            var path = TrimResourcesPath($"{Settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}");
+            var path = TrimResourcesPath($"{Settings.GetAssetFilePath(sheetTitle)}/{code}/{sheetTitle}");
             var file = (LocalizationAsset)await Resources.LoadAsync<LocalizationAsset>(path).ToUniTask();
-
             var values =  ConvertAsset(file);
             Resources.UnloadAsset(file);
             return values;
@@ -52,7 +51,7 @@ namespace LocalizationPackage
             SystemLanguage code,
             string sheetTitle)
         {
-            var path = TrimResourcesPath($"{Settings.GetAssetFilePath(sheetTitle)}/{code}_{sheetTitle}");
+            var path = TrimResourcesPath($"{Settings.GetAssetFilePath(sheetTitle)}/{code}/{sheetTitle}");
             var file = Resources.Load<LocalizationAsset>(path);
             var values =  ConvertAsset(file);
             Resources.UnloadAsset(file);

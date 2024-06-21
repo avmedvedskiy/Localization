@@ -230,15 +230,19 @@ namespace LocalizationPackage
 
                 if (sheetTitle != _settings.PredefSheetTitle)
                 {
-                    var path = $"{_settings.OtherSheetsPath}/{langCode}_{sheetTitle}.asset";
-                    AssetDatabase.CreateAsset(asset, path);
+                    var folderPath = $"{_settings.OtherSheetsPath}/{langCode}";
+                    Directory.CreateDirectory(folderPath);
+                    var filePath = $"{folderPath}/{sheetTitle}.asset";
+                    AssetDatabase.CreateAsset(asset, filePath);
                     if (!string.IsNullOrEmpty(_settings.AddressableGroup))
-                        AddAssetToGroup(path, _settings.AddressableGroup, $"{langCode}_{sheetTitle}");
+                        AddAssetToGroup(folderPath, _settings.AddressableGroup, $"{langCode}");
                 }
                 else
                 {
-                    var path = $"{_settings.PredefPath}/{langCode}_{sheetTitle}.asset";
-                    AssetDatabase.CreateAsset(asset, path);
+                    var folderPath = $"{_settings.PredefPath}/{langCode}";
+                    Directory.CreateDirectory(folderPath);
+                    var filePath = $"{folderPath}/{sheetTitle}.asset";
+                    AssetDatabase.CreateAsset(asset, filePath);
                 }
             }
 
