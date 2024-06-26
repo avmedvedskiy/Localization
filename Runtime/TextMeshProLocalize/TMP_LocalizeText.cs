@@ -10,7 +10,8 @@ namespace LocalizationPackage.TextMeshPro
     public class TMP_LocalizeText : MonoBehaviour
     {
         [SerializeField]
-        private KeySheetPair _localizationKey;
+        [LocalizationKey]
+        private string _localization;
         
         [SerializeField]
         private TextMeshProUGUI _textMeshPro;
@@ -34,8 +35,8 @@ namespace LocalizationPackage.TextMeshPro
 
         private void UpdateText()
         {
-            if(_localizationKey.IsNullOrEmpty() == false)
-                _textMeshPro.text = _localizationKey.ToString();
+            if(_localization.IsNotNullOrEmpty())
+                _textMeshPro.text = Localization.Get(_localization);
         }
 
         private void OnValidate()

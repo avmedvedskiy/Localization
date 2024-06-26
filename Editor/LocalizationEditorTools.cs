@@ -61,7 +61,7 @@ namespace LocalizationPackage
             LoadSettings();
             UpdateLocalization(false);
         }
-        
+
         public void UpdateLocalization(bool displayProgressBar)
         {
             foreach (var info in _settings.SheetInfos)
@@ -218,8 +218,8 @@ namespace LocalizationPackage
                 SystemLanguage lc = (SystemLanguage)System.Enum.Parse(typeof(SystemLanguage), langCode);
                 if (!_settings.LanguageFilter.Exists(x => x == lc))
                     continue;
-                
-                
+
+
                 int langID = (int)langs.Key;
                 Hashtable entries = (Hashtable)loadEntries[langID];
                 foreach (DictionaryEntry item in entries)
@@ -267,8 +267,8 @@ namespace LocalizationPackage
             }
             else
             {
-                if (!string.IsNullOrEmpty(key)) ;
-                entry.address = key;
+                if (!string.IsNullOrEmpty(key))
+                    entry.address = key;
             }
         }
 

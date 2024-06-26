@@ -15,10 +15,6 @@ namespace LocalizationPackage.TextMeshPro
         private TimeFormatManager.TimeFrom _timeFrom = TimeFormatManager.TimeFrom.Days;
         
         [SerializeField]
-        [LocalizationSheet]
-        private string _localizationSheet = TimeFormatManager.LOCALIZATION_SHEET_COMMON;
-        
-        [SerializeField]
         private TextMeshProUGUI _textMeshPro;
 
         public void SetTime(int seconds)
@@ -45,7 +41,7 @@ namespace LocalizationPackage.TextMeshPro
         
         private void UpdateText()
         {
-            _textMeshPro.text = TimeFormatManager.FormatTime(_timeFrom,_seconds,_localizationSheet);
+            _textMeshPro.text = TimeFormatManager.FormatTime(_timeFrom,_seconds);
         }
     }
 }

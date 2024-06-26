@@ -1,12 +1,8 @@
 using System;
 using UnityEngine;
-using System.Globalization;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using UnityEngine.AddressableAssets;
 
 namespace LocalizationPackage
 {
@@ -15,7 +11,8 @@ namespace LocalizationPackage
         public static event Action OnLanguageChanged;
         public static SystemLanguage CurrentLanguage { get; private set; }
         private static LocalizationSettings Settings => SettingsProvider.Settings;
-
+        
+        //maybe need to collapse into one dictionary
         private static readonly Dictionary<string, Dictionary<string, string>> _storage = new();
 
         static Localization()
@@ -45,41 +42,14 @@ namespace LocalizationPackage
             OnLanguageChanged?.Invoke();
         }
 
-
         public static string Get(string key)
         {
-            if (_storage == null || _storage.Count == 0)
-                return $"#!#{key}#!#";
-
-            return Get(key, Settings.SheetInfos[0].name);
-        }
-
-
-        public static string Get(string key, string sheetTitle)
-        {
-            if (Has(key, sheetTitle))
+            foreach (var sheets in _storage)
             {
-                return _storage[sheetTitle][key];
+                if (sheets.Value.TryGetValue(key, out var result))
+                    return result;
             }
-
-            if (Has(key, Settings.PredefSheetTitle))
-            {
-                return _storage[Settings.PredefSheetTitle][key];
-            }
-
             return $"#!#{key}#!#";
-        }
-
-        public static bool Has(string key)
-        {
-            return Has(key, Settings.SheetInfos[0].name);
-        }
-
-        private static bool Has(string key, string sheetTitle)
-        {
-            if (_storage == null || !_storage.ContainsKey(sheetTitle))
-                return false;
-            return _storage[sheetTitle].ContainsKey(key);
         }
         
 #if UNITY_EDITOR
