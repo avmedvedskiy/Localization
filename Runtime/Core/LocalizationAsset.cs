@@ -10,6 +10,12 @@ namespace LocalizationPackage
         {
             public string key;
             public string value;
+
+            public LanguageData(string k, string v)
+            {
+                key = k;
+                value = v;
+            }
         }
 
         public List<LanguageData> values = new();

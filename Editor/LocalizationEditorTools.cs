@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -13,15 +14,14 @@ namespace LocalizationPackage
     public class LocalizationEditorTools
     {
         private LocalizationSettings _settings;
-        private int _unresolvedErrors;
+        private readonly List<(string error, string language)> _errors = new();
 
-        public int UnresolvedErrors => _unresolvedErrors;
+        public IReadOnlyList<(string error, string language)> Errors => _errors;
 
         public LocalizationSettings LoadSettings()
         {
             if (_settings != null)
                 return _settings;
-
 
             if (File.Exists(LocalizationSettings.SETTINGS_ASSET_PATH))
             {
@@ -50,7 +50,7 @@ namespace LocalizationPackage
 
         public void ClearErrors()
         {
-            _unresolvedErrors = 0;
+            _errors.Clear();
         }
 
         /// <summary>
@@ -58,12 +58,13 @@ namespace LocalizationPackage
         /// </summary>
         public void LoadAndUpdateLocalization()
         {
-            LoadSettings();
             UpdateLocalization(false);
         }
 
         public void UpdateLocalization(bool displayProgressBar)
         {
+            LoadSettings();
+            CreateLanguageFolder();
             foreach (var info in _settings.SheetInfos)
             {
                 UpdateSheet(info, displayProgressBar);
@@ -120,137 +121,107 @@ namespace LocalizationPackage
 
             _settings.DefaultLangCode = defaultLangCode;
             _settings.UseSystemLanguagePerDefault = useSystemLang;
-            _settings.PredefSheetTitle = predefSheetTitle;
+            _settings.PredefinedSheetTitle = predefSheetTitle;
 
             EditorUtility.SetDirty(_settings);
         }
 
-
-        void LoadPage(Hashtable loadLanguages, Hashtable loadEntries, string data, string sheetTitle)
+        Dictionary<string, Dictionary<string, string>> LoadPage(string data, string sheetTitle)
         {
-            List<string> lines = SplitLines(data);
+            var lines = SplitLines(data)
+                .Select(SplitTSVLine)
+                .ToList();
 
-            for (int i = 0; i < lines.Count; i++)
+            var languages = lines
+                .First()
+                .Skip(1)
+                .ToList();
+
+            var resultLanguages
+                = languages.ToDictionary(x => x, _ => new Dictionary<string, string>());
+
+            foreach (var line in lines
+                         .Skip(1)
+                         .Where(x => string.IsNullOrEmpty(x.First()) == false))
             {
-                string line = lines[i];
-                List<string> contents = SplitTSVLine(line);
-                if (i == 0)
+                string key = line[0];
+                for (int i = 1; i < line.Count; i++)
                 {
-                    //Language titles
-                    for (int j = 1; j < contents.Count; j++)
-                    {
-                        loadLanguages[j] = contents[j];
-                        loadEntries[j] = new Hashtable();
-                    }
-                }
-                else if (contents.Count > 1)
-                {
-                    string key = contents[0];
-                    if (key == "")
-                        continue; //Skip entries with empty keys (the other values can be used as labels)
-                    for (int j = 1; j < (loadLanguages.Count + 1) && j < contents.Count; j++)
-                    {
-                        string content = contents[j];
-                        Hashtable hTable = (Hashtable)loadEntries[j];
-                        if (hTable.ContainsKey(key))
-                        {
-                            Debug.LogError("ERROR: Double key [" + key + "] Sheet: " + sheetTitle);
-                            _unresolvedErrors++;
-                        }
+                    var langName = languages[i - 1];
+                    var langData = resultLanguages[langName];
+                    var value = line[i];
+                    if (string.IsNullOrEmpty(value))
+                        AddError($"Empty Key {key} in sheet {sheetTitle} (lang={langName})", langName);
 
-                        hTable[key] = System.Security.SecurityElement.Escape(content);
-                    }
+                    if (!langData.TryAdd(key, value))
+                        AddError($"Duplicated Key {key} in sheet {sheetTitle} (lang={langName})", langName);
                 }
             }
+
+            return resultLanguages;
         }
 
-        void ParseData(string data, string sheetTitle)
+        void AddError(string error, string language)
         {
-            CreateLanguageFolder();
+            if (IsAvailableLanguage(language))
+                _errors.Add((error, language));
+        }
 
-            Hashtable loadLanguages = new Hashtable();
-            Hashtable loadEntries = new Hashtable();
-
-            LoadPage(loadLanguages, loadEntries, data, sheetTitle);
-
-            if (loadEntries.Count < 1)
-            {
-                _unresolvedErrors++;
-                Debug.LogError("Sheet " + sheetTitle + " contains no languages!");
-                return;
-            }
-
-            //Verify loaded data
-            Hashtable sampleData = (Hashtable)loadEntries[1];
-            for (int j = 2; j < loadEntries.Count; j++)
-            {
-                Hashtable otherData = ((Hashtable)loadEntries[j]);
-
-                foreach (DictionaryEntry item in otherData)
-                {
-                    if (!sampleData.ContainsKey(item.Key))
-                    {
-                        Debug.LogError("[" + loadLanguages[1] + "] [" + item.Key + "] Key is missing!");
-                        _unresolvedErrors++;
-                    }
-                }
-
-                foreach (DictionaryEntry item in sampleData)
-                {
-                    if (!otherData.ContainsKey(item.Key))
-                    {
-                        Debug.LogError("Sheet(" + sheetTitle + ") [" + loadLanguages[j] + "] [" + item.Key +
-                                       "] Key is missing!");
-                        _unresolvedErrors++;
-                    }
-                }
-            }
-
+        void SaveToFiles(Dictionary<string, Dictionary<string, string>> page, string sheetTitle)
+        {
             //Save the loaded data
-            foreach (DictionaryEntry langs in loadLanguages)
+            foreach (var languageData in page)
             {
-                LocalizationAsset asset = ScriptableObject.CreateInstance<LocalizationAsset>();
-
-                string langCode = ((string)langs.Value).TrimEnd(System.Environment.NewLine.ToCharArray());
-                if (string.IsNullOrEmpty(langCode))
-                    continue;
-
-                SystemLanguage lc = (SystemLanguage)System.Enum.Parse(typeof(SystemLanguage), langCode);
-                if (!_settings.LanguageFilter.Exists(x => x == lc))
-                    continue;
-
-
-                int langID = (int)langs.Key;
-                Hashtable entries = (Hashtable)loadEntries[langID];
-                foreach (DictionaryEntry item in entries)
-                {
-                    asset.values.Add(new LocalizationAsset.LanguageData()
-                        { key = (string)item.Key, value = ((string)item.Value).UnescapeXML() });
-                }
-
-                if (sheetTitle != _settings.PredefSheetTitle)
-                {
-                    var folderPath = $"{_settings.OtherSheetsPath}/{langCode}";
-                    Directory.CreateDirectory(folderPath);
-                    var filePath = $"{folderPath}/{sheetTitle}.asset";
-                    AssetDatabase.CreateAsset(asset, filePath);
-                    if (!string.IsNullOrEmpty(_settings.AddressableGroup))
-                        AddAssetToGroup(folderPath, _settings.AddressableGroup, $"{langCode}");
-                }
-                else
-                {
-                    var folderPath = $"{_settings.PredefPath}/{langCode}";
-                    Directory.CreateDirectory(folderPath);
-                    var filePath = $"{folderPath}/{sheetTitle}.asset";
-                    AssetDatabase.CreateAsset(asset, filePath);
-                }
+                if (IsAvailableLanguage(languageData.Key))
+                    SaveToFile(sheetTitle, languageData.Value, languageData.Key);
             }
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
 
-        private static void AddAssetToGroup(string path, string groupName, string key = "")
+        bool IsAvailableLanguage(string language) => _settings.LanguageFilter.Exists(x => x.ToString() == language);
+
+        void SaveToFile(string sheetTitle, Dictionary<string, string> languageData, string langCode)
+        {
+            LocalizationAsset asset = ScriptableObject.CreateInstance<LocalizationAsset>();
+            asset.values = languageData
+                .Select(x => new LocalizationAsset.LanguageData(x.Key, x.Value))
+                .ToList();
+
+            if (sheetTitle != _settings.PredefinedSheetTitle)
+            {
+                var folderPath = $"{_settings.OtherSheetsPath}/{langCode}";
+                Directory.CreateDirectory(folderPath);
+                var filePath = $"{folderPath}/{sheetTitle}.asset";
+                AssetDatabase.CreateAsset(asset, filePath);
+                if (!string.IsNullOrEmpty(_settings.AddressableGroup))
+                    AddAssetToGroup(folderPath, _settings.AddressableGroup, $"{langCode}");
+            }
+            else
+            {
+                var folderPath = $"{_settings.PredefinedPath}/{langCode}";
+                Directory.CreateDirectory(folderPath);
+                var filePath = $"{folderPath}/{sheetTitle}.asset";
+                AssetDatabase.CreateAsset(asset, filePath);
+            }
+        }
+
+        void ParseData(string data, string sheetTitle)
+        {
+            try
+            {
+                var loadedPage = LoadPage(data, sheetTitle);
+                SaveToFiles(loadedPage, sheetTitle);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                AddError(e.Message, "Unknown");
+            }
+        }
+
+        void AddAssetToGroup(string path, string groupName, string key = "")
         {
             var group = AddressableAssetSettingsDefaultObject.Settings.FindGroup(groupName);
             if (!group)
@@ -273,23 +244,27 @@ namespace LocalizationPackage
         }
 
 
-        private List<string> SplitLines(string data) => data.Split("\r\n").ToList();
+        List<string> SplitLines(string data) => data.Split("\r\n").ToList();
 
         List<string> SplitTSVLine(string line)
         {
-            return line.Split("\t").ToList();
+            return line
+                .Split("\t")
+                .Select(System.Security.SecurityElement.Escape)
+                .ToList();
         }
 
         void CreateLanguageFolder()
         {
             CreateFolder(_settings.OtherSheetsPath);
-            CreateFolder(_settings.PredefPath);
+            CreateFolder(_settings.PredefinedPath);
         }
 
         void CreateFolder(string path)
         {
-            if (!Directory.Exists(path))
-                Directory.CreateDirectory(path);
+            if (Directory.Exists(path))
+                Directory.Delete(path, true);
+            Directory.CreateDirectory(path);
         }
     }
 }

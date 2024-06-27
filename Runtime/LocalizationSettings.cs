@@ -15,12 +15,12 @@ namespace LocalizationPackage
             public string id;
         }
 
-        public const string SETTINGS_ASSET_PATH = ASSET_RESOURCES_PATH + "/" + SETTINGS_NAME;
+        public const string SETTINGS_ASSET_PATH = "Assets/Localization/Resources/" + SETTINGS_NAME;
         public const string SETTINGS_NAME = "LocalizationSettings.asset";
         public const string ASSET_RESOURCES_PATH = "Assets/Localization/Resources/Languages";
-        internal const string SETTINGS_ASSET_RESOURCES_PATH = "Languages/LocalizationSettings";
+        internal const string SETTINGS_ASSET_RESOURCES_PATH = "LocalizationSettings";
         internal const string OTHER_SHEETS_PATH = "Assets/Localization/Languages/";
-        internal const string PREDEF_PATH = "Assets/Localization/Resources/Languages/";
+        internal const string PREDEFINED_PATH = "Assets/Localization/Resources/Languages";
         internal const string ADDRESSABLE_DEFAULT_GROUP_NAME = "Localization";
 
         [SerializeField] private string _documentUrl;
@@ -29,11 +29,11 @@ namespace LocalizationPackage
         [SerializeField] private bool _useSystemLanguagePerDefault = true;
         [SerializeField] private SystemLanguage _defaultLangCode = SystemLanguage.English;
 
-        [SerializeField] private string _predefSheetTitle = "Predef";
+        [SerializeField] private string _predefinedSheetTitle = "Predefined";
 
         [SerializeField] private List<SystemLanguage> _languageFilter;
 
-        [SerializeField] private string _predefPath = PREDEF_PATH;
+        [SerializeField] private string _predefinedPath = PREDEFINED_PATH;
         [SerializeField] private string _addressableGroup = ADDRESSABLE_DEFAULT_GROUP_NAME;
         [SerializeField] private string _otherSheetsPath = OTHER_SHEETS_PATH;
 
@@ -54,20 +54,20 @@ namespace LocalizationPackage
             set => _defaultLangCode = value;
         }
 
-        public string PredefSheetTitle
+        public string PredefinedSheetTitle
         {
-            get => _predefSheetTitle;
-            set => _predefSheetTitle = value;
+            get => _predefinedSheetTitle;
+            set => _predefinedSheetTitle = value;
         }
 
         public List<SystemLanguage> LanguageFilter => _languageFilter;
         public string AddressableGroup => _addressableGroup;
         public string OtherSheetsPath => _otherSheetsPath;
 
-        public string PredefPath => _predefPath;
+        public string PredefinedPath => _predefinedPath;
 
         public SystemLanguage EditorPreviewCode => _editorPreviewCode;
 
-        public string GetAssetFilePath(string sheetTitle) => sheetTitle == PredefSheetTitle ? PredefPath : OtherSheetsPath;
+        public string GetAssetFilePath(string sheetTitle) => sheetTitle == PredefinedSheetTitle ? PredefinedPath : OtherSheetsPath;
     }
 }

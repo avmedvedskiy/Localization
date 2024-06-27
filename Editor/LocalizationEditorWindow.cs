@@ -14,7 +14,7 @@ namespace LocalizationPackage
         static void OpenWindow()
         {
             var window = GetWindow(typeof(LocalizationEditorWindow));
-            window.maxSize = new Vector2(500f, 230f);
+            window.maxSize = new Vector2(500f, 300f);
             window.minSize = window.maxSize;
             window.titleContent = new GUIContent("LocalizationEditor");
             window.Show();
@@ -110,14 +110,19 @@ namespace LocalizationPackage
                 }
             }
 
-            int unresolvedErrors = _tools.UnresolvedErrors;
-            if (unresolvedErrors > 0)
+            if (_tools.Errors is {Count:>0})
             {
-                Rect rec = GUILayoutUtility.GetLastRect();
-                GUI.color = Color.red;
-                EditorGUI.DropShadowLabel(new Rect(0, rec.yMin + 15, 200, 20),
-                    "Unresolved errors: " + unresolvedErrors);
-                GUI.color = Color.white;
+                GUIStyle style = new GUIStyle()
+                {
+                    normal = new GUIStyleState()
+                    {
+                        textColor = Color.red
+                    }
+                };
+                foreach (var errorInfo in _tools.Errors.Distinct())
+                {
+                    EditorGUILayout.LabelField(errorInfo.error,style);
+                }
             }
 
             GUILayout.Space(10f);
@@ -134,12 +139,13 @@ namespace LocalizationPackage
 
             _useSystemLang = _settings.UseSystemLanguagePerDefault;
             _defaultLanguageCode = _settings.DefaultLangCode;
-            _predefSheetTitle = _settings.PredefSheetTitle;
+            _predefSheetTitle = _settings.PredefinedSheetTitle;
             _gDocsURL = _settings.DocumentUrl;
         }
 
         void UpdateSheet(LocalizationSettings.SheetInfo info)
         {
+            LoadSettings();
             _tools.ClearErrors();
             _tools.UpdateSheet(info, true);
             EditorUtility.ClearProgressBar();
@@ -148,6 +154,7 @@ namespace LocalizationPackage
 
         private void UpdateLocalization()
         {
+            LoadSettings();
             _tools.ClearErrors();
             _tools.UpdateLocalization(true);
             _updatingTranslation = false;

@@ -40,13 +40,13 @@ namespace LocalizationPackage
         private static LocalizationAsset GetLanguageAsset(SystemLanguage languageCode, string sheetTitle)
         {
             string fileName = $"{languageCode}/{sheetTitle}.asset";
-            if (_cacheLocalizationAssets.TryGetValue(fileName, out var languageAsset))
+            if (_cacheLocalizationAssets.TryGetValue(fileName, out var languageAsset) && languageAsset != null)
                 return languageAsset;
 
 
             string assetFilePath = Settings.GetAssetFilePath(sheetTitle);
             var asset = AssetDatabase.LoadAssetAtPath<LocalizationAsset>($"{assetFilePath}/{fileName}");
-            _cacheLocalizationAssets.Add(fileName, asset);
+            _cacheLocalizationAssets[fileName] = asset;
             return asset;
         }
 

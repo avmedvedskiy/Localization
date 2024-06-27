@@ -12,12 +12,12 @@ namespace LocalizationPackage
         private static LocalizationSettings Settings => SettingsProvider.Settings;
         public static Dictionary<string, string> LoadDefaultSheet(SystemLanguage code)
         {
-            return LoadFromResources(code, Settings.PredefSheetTitle); 
+            return LoadFromResources(code, Settings.PredefinedSheetTitle); 
         }
 
         public static async UniTask<Dictionary<string, string>> LoadSheetAsync(SystemLanguage code, string sheetTitle)
         {
-            if (sheetTitle == Settings.PredefSheetTitle || string.IsNullOrEmpty(Settings.AddressableGroup))
+            if (sheetTitle == Settings.PredefinedSheetTitle || string.IsNullOrEmpty(Settings.AddressableGroup))
             {
                 return await LoadFromResourcesAsync(code, sheetTitle);
             }

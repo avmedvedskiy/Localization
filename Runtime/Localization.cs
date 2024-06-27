@@ -18,7 +18,7 @@ namespace LocalizationPackage
         static Localization()
         {
             CurrentLanguage = LanguageCodeStorage.GetLanguageCode();
-            _storage.Add(Settings.PredefSheetTitle, LocalizationLoader.LoadDefaultSheet(CurrentLanguage));
+            _storage.Add(Settings.PredefinedSheetTitle, LocalizationLoader.LoadDefaultSheet(CurrentLanguage));
         }
 
         /// <summary>
