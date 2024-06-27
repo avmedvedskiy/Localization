@@ -10,11 +10,12 @@ Has own component for localize TMP with sheet dropdown and text preview
 
 ![image](https://user-images.githubusercontent.com/17832838/168089679-e7f18887-6054-432c-af18-2c2443e3c8b5.png)
 
-Use custom struct for string localization in Editor
+Contains a custom attribute for drawing key preview and search popup
+[LocalizationKeyAttribute]
 
-![image](https://user-images.githubusercontent.com/17832838/168090097-4bd66485-f41c-4175-96c1-66dd67299cb7.png)
+![image](https://github.com/avmedvedskiy/Localization/assets/17832838/1b776c18-bdc0-4bc3-8632-5b3a83161b6f)
 
-Contains a custom attribute for drawing sheets dropdown
-[LocalizationSheet]
+![image](https://github.com/avmedvedskiy/Localization/assets/17832838/e8ab238e-cf6d-4706-8b49-19040ee4493d)
 
-Also added async extention based on UniTask
+
+
