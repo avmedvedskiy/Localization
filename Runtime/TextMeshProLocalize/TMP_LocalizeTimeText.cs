@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace LocalizationPackage.TextMeshPro
 {
-    [RequireComponent(typeof(TextMeshProUGUI))]
+    [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("UI/TextMeshPro - Localize Time Text (UI)", 11)]
     public class TMP_LocalizeTimeText : MonoBehaviour
     {
@@ -15,7 +15,7 @@ namespace LocalizationPackage.TextMeshPro
         private TimeFormatManager.TimeFrom _timeFrom = TimeFormatManager.TimeFrom.Days;
         
         [SerializeField]
-        private TextMeshProUGUI _textMeshPro;
+        private TMP_Text _textMeshPro;
 
         public void SetTime(int seconds)
         {
@@ -42,6 +42,11 @@ namespace LocalizationPackage.TextMeshPro
         private void UpdateText()
         {
             _textMeshPro.text = TimeFormatManager.FormatTime(_timeFrom,_seconds);
+        }
+
+        private void OnValidate()
+        {
+            _textMeshPro ??= GetComponent<TMP_Text>();
         }
     }
 }
