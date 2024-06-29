@@ -5,9 +5,16 @@ using UnityEngine.Serialization;
 
 namespace LocalizationPackage
 {
+    public enum AddressableType
+    {
+        None,
+        PerFolder,
+        PerFile,
+    }
     [Serializable]
     public class LocalizationSettings : ScriptableObject
     {
+        
         [Serializable]
         public struct SheetInfo
         {
@@ -34,8 +41,11 @@ namespace LocalizationPackage
         [SerializeField] private List<SystemLanguage> _languageFilter;
 
         [SerializeField] private string _predefinedPath = PREDEFINED_PATH;
-        [SerializeField] private string _addressableGroup = ADDRESSABLE_DEFAULT_GROUP_NAME;
         [SerializeField] private string _otherSheetsPath = OTHER_SHEETS_PATH;
+        
+        [Header("Addressable")]
+        [SerializeField] private string _addressableGroup = ADDRESSABLE_DEFAULT_GROUP_NAME;
+        [SerializeField] private AddressableType _addressableType = AddressableType.None;
 
         [Space(10)] [SerializeField] private SystemLanguage _editorPreviewCode = SystemLanguage.English;
 
@@ -61,13 +71,14 @@ namespace LocalizationPackage
         }
 
         public List<SystemLanguage> LanguageFilter => _languageFilter;
-        public string AddressableGroup => _addressableGroup;
         public string OtherSheetsPath => _otherSheetsPath;
-
         public string PredefinedPath => _predefinedPath;
+        
+        public string AddressableGroup => _addressableGroup;
+        public AddressableType AddressableType => _addressableType;
 
         public SystemLanguage EditorPreviewCode => _editorPreviewCode;
-
+        
         public string GetAssetFilePath(string sheetTitle) => sheetTitle == PredefinedSheetTitle ? PredefinedPath : OtherSheetsPath;
     }
 }

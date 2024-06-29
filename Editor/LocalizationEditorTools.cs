@@ -192,19 +192,32 @@ namespace LocalizationPackage
             if (sheetTitle != _settings.PredefinedSheetTitle)
             {
                 var folderPath = $"{_settings.OtherSheetsPath}/{langCode}";
-                Directory.CreateDirectory(folderPath);
-                var filePath = $"{folderPath}/{sheetTitle}.asset";
-                AssetDatabase.CreateAsset(asset, filePath);
-                if (!string.IsNullOrEmpty(_settings.AddressableGroup))
-                    AddAssetToGroup(folderPath, _settings.AddressableGroup, $"{langCode}");
+                CreateAssetFile(sheetTitle, folderPath, asset);
+                
+                switch (_settings.AddressableType)
+                {
+                    case AddressableType.None:
+                        break;
+                    case AddressableType.PerFolder:
+                        AddAssetToGroup(folderPath, _settings.AddressableGroup, langCode);
+                        break;
+                    case AddressableType.PerFile:
+                        AddAssetToGroup($"{folderPath}/{sheetTitle}.asset", _settings.AddressableGroup, $"{langCode}/{sheetTitle}");
+                        break;
+                }
             }
             else
             {
                 var folderPath = $"{_settings.PredefinedPath}/{langCode}";
-                Directory.CreateDirectory(folderPath);
-                var filePath = $"{folderPath}/{sheetTitle}.asset";
-                AssetDatabase.CreateAsset(asset, filePath);
+                CreateAssetFile(sheetTitle, folderPath, asset);
             }
+        }
+
+        private void CreateAssetFile(string sheetTitle, string folderPath, LocalizationAsset asset)
+        {
+            Directory.CreateDirectory(folderPath);
+            var filePath = $"{folderPath}/{sheetTitle}.asset";
+            AssetDatabase.CreateAsset(asset, filePath);
         }
 
         void ParseData(string data, string sheetTitle)
@@ -223,6 +236,12 @@ namespace LocalizationPackage
 
         void AddAssetToGroup(string path, string groupName, string key = "")
         {
+            if (string.IsNullOrEmpty(groupName))
+            {
+                Debug.LogError($"Addressable group can't be empty");
+                return;
+            }
+            
             var group = AddressableAssetSettingsDefaultObject.Settings.FindGroup(groupName);
             if (!group)
             {

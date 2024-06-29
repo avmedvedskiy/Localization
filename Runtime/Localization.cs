@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
+using UnityEngine.Pool;
 
 namespace LocalizationPackage
 {
@@ -24,21 +25,38 @@ namespace LocalizationPackage
         /// <summary>
         /// Load all other sheets
         /// </summary>
-        public static async UniTask LoadAsync()
+        public static async UniTask LoadAllAsync()
         {
             foreach (var info in Settings.SheetInfos)
             {
-                if (!_storage.ContainsKey(info.name))
-                    _storage.Add(info.name, await LocalizationLoader.LoadSheetAsync(CurrentLanguage, info.name));
+                await LoadAsync(info.name);
             }
+        }
+        
+        /// <summary>
+        /// Load sheet
+        /// </summary>
+        public static async UniTask LoadAsync(string sheetName)
+        {
+            if (!_storage.ContainsKey(sheetName))
+                _storage.Add(sheetName, await LocalizationLoader.LoadSheetAsync(CurrentLanguage, sheetName));
         }
 
         public static async UniTask SwitchLanguageAsync(SystemLanguage code)
         {
             LanguageCodeStorage.SetLanguageCode(code);
             CurrentLanguage = code;
+            var keys = ListPool<string>.Get();
+            foreach (var s in _storage)
+            {
+                keys.Add(s.Key);
+            }
             _storage.Clear();
-            await LoadAsync();
+            foreach (var sheet in keys)
+            {
+                await LoadAsync(sheet);
+            }
+            ListPool<string>.Release(keys);
             OnLanguageChanged?.Invoke();
         }
 
