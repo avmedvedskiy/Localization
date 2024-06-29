@@ -202,7 +202,7 @@ namespace LocalizationPackage
                         AddAssetToGroup(folderPath, _settings.AddressableGroup, langCode);
                         break;
                     case AddressableType.PerFile:
-                        AddAssetToGroup($"{folderPath}/{sheetTitle}.asset", _settings.AddressableGroup, $"{langCode}/{sheetTitle}");
+                        AddAssetToGroup($"{folderPath}/{sheetTitle}.asset", _settings.AddressableGroup, $"{langCode}/{sheetTitle}.asset");
                         break;
                 }
             }

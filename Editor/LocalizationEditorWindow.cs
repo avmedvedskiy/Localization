@@ -1,9 +1,6 @@
-using System;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
-#if USE_ADDRESSABLES
-#endif
 
 namespace LocalizationPackage
 {
@@ -20,7 +17,7 @@ namespace LocalizationPackage
             window.Show();
         }
 
-        private LocalizationEditorTools _tools = new LocalizationEditorTools();
+        private readonly LocalizationEditorTools _tools = new();
         //Settings
         private LocalizationSettings _settings = null;
 
