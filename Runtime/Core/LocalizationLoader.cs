@@ -17,7 +17,8 @@ namespace LocalizationPackage
 
         public static async UniTask<Dictionary<string, string>> LoadSheetAsync(SystemLanguage code, string sheetTitle)
         {
-            if (sheetTitle == Settings.PredefinedSheetTitle || string.IsNullOrEmpty(Settings.AddressableGroup))
+            var sheetInfo = Settings.GetSheetInfo(sheetTitle);
+            if (sheetInfo.addressableType == AddressableType.Resources)
             {
                 return await LoadFromResourcesAsync(code, sheetTitle);
             }

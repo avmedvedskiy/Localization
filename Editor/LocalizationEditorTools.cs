@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -64,6 +65,7 @@ namespace LocalizationPackage
         public void UpdateLocalization(bool displayProgressBar)
         {
             LoadSettings();
+            CreateOrClearAddressableAssetGroup();
             CreateLanguageFolder();
             foreach (var info in _settings.SheetInfos)
             {
@@ -88,7 +90,6 @@ namespace LocalizationPackage
                 }
             }
 
-
             if (request.result == UnityWebRequest.Result.ConnectionError)
             {
                 Debug.Log("isNetworkError " + info.name);
@@ -97,7 +98,7 @@ namespace LocalizationPackage
             {
                 var data = request.downloadHandler.text;
                 Debug.Log("Start Parsing " + info.name);
-                ParseData(data, info.name);
+                ParseData(data, info);
                 Debug.Log("Complete Parsing " + info.name);
             }
         }
@@ -167,7 +168,7 @@ namespace LocalizationPackage
                 _errors.Add((error, language));
         }
 
-        void SaveToFiles(Dictionary<string, Dictionary<string, string>> page, string sheetTitle)
+        void SaveToFiles(Dictionary<string, Dictionary<string, string>> page, LocalizationSettings.SheetInfo sheetTitle)
         {
             //Save the loaded data
             foreach (var languageData in page)
@@ -182,34 +183,34 @@ namespace LocalizationPackage
 
         bool IsAvailableLanguage(string language) => _settings.LanguageFilter.Exists(x => x.ToString() == language);
 
-        void SaveToFile(string sheetTitle, Dictionary<string, string> languageData, string langCode)
+        void SaveToFile(LocalizationSettings.SheetInfo sheetInfo, Dictionary<string, string> languageData, string langCode)
         {
             LocalizationAsset asset = ScriptableObject.CreateInstance<LocalizationAsset>();
             asset.values = languageData
                 .Select(x => new LocalizationAsset.LanguageData(x.Key, x.Value))
                 .ToList();
 
-            if (sheetTitle != _settings.PredefinedSheetTitle)
+            if (sheetInfo.addressableType != AddressableType.Resources)
             {
-                var folderPath = $"{_settings.OtherSheetsPath}/{langCode}";
-                CreateAssetFile(sheetTitle, folderPath, asset);
+                var folderPath = $"{_settings.AddressablePath}/{langCode}";
+                CreateAssetFile(sheetInfo.name, folderPath, asset);
                 
-                switch (_settings.AddressableType)
+                switch (sheetInfo.addressableType)
                 {
-                    case AddressableType.None:
+                    case AddressableType.Resources:
                         break;
                     case AddressableType.PerFolder:
-                        AddAssetToGroup(folderPath, _settings.AddressableGroup, langCode);
+                        AddAssetToGroup(folderPath, sheetInfo.addressableGroup, langCode);
                         break;
                     case AddressableType.PerFile:
-                        AddAssetToGroup($"{folderPath}/{sheetTitle}.asset", _settings.AddressableGroup, $"{langCode}/{sheetTitle}.asset");
+                        AddAssetToGroup($"{folderPath}/{sheetInfo.name}.asset", sheetInfo.addressableGroup, $"{langCode}/{sheetInfo.name}.asset");
                         break;
                 }
             }
             else
             {
-                var folderPath = $"{_settings.PredefinedPath}/{langCode}";
-                CreateAssetFile(sheetTitle, folderPath, asset);
+                var folderPath = $"{_settings.ResourcesPath}/{langCode}";
+                CreateAssetFile(sheetInfo.name, folderPath, asset);
             }
         }
 
@@ -220,12 +221,12 @@ namespace LocalizationPackage
             AssetDatabase.CreateAsset(asset, filePath);
         }
 
-        void ParseData(string data, string sheetTitle)
+        void ParseData(string data, LocalizationSettings.SheetInfo sheetInfo)
         {
             try
             {
-                var loadedPage = LoadPage(data, sheetTitle);
-                SaveToFiles(loadedPage, sheetTitle);
+                var loadedPage = LoadPage(data, sheetInfo.name);
+                SaveToFiles(loadedPage, sheetInfo);
             }
             catch (Exception e)
             {
@@ -243,11 +244,6 @@ namespace LocalizationPackage
             }
             
             var group = AddressableAssetSettingsDefaultObject.Settings.FindGroup(groupName);
-            if (!group)
-            {
-                group = AddressableAssetSettingsDefaultObject.Settings.CreateGroup(groupName, false, false, true, null,
-                    typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema));
-            }
 
             var assetPathToGuid = AssetDatabase.AssetPathToGUID(path);
             var entry = AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(assetPathToGuid, group);
@@ -259,6 +255,29 @@ namespace LocalizationPackage
             {
                 if (!string.IsNullOrEmpty(key))
                     entry.address = key;
+            }
+        }
+
+        private void CreateOrClearAddressableAssetGroup()
+        {
+            foreach (var groupName in _settings.SheetInfos
+                         .Where(x=>!string.IsNullOrEmpty(x.addressableGroup))
+                         .Select(x => x.addressableGroup)
+                         .Distinct())
+            {
+                var group = AddressableAssetSettingsDefaultObject.Settings.FindGroup(groupName);
+                if (!group)
+                {
+                    AddressableAssetSettingsDefaultObject.Settings.CreateGroup(groupName, false, false, true, null,
+                        typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema));
+                }
+                else
+                {
+                    //clear groups
+                    var keys = group.entries.ToList();
+                    group.RemoveAssetEntries(keys);
+                }
+                
             }
         }
 
@@ -275,8 +294,8 @@ namespace LocalizationPackage
 
         void CreateLanguageFolder()
         {
-            CreateFolder(_settings.OtherSheetsPath);
-            CreateFolder(_settings.PredefinedPath);
+            CreateFolder(_settings.AddressablePath);
+            CreateFolder(_settings.ResourcesPath);
         }
 
         void CreateFolder(string path)
