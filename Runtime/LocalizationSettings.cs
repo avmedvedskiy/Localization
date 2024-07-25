@@ -72,10 +72,12 @@ namespace LocalizationPackage
         public string ResourcesPath => _resourcesPath;
         public SystemLanguage EditorPreviewCode => _editorPreviewCode;
 
+        public bool Contains(string sheetName) => _sheetInfos.FindIndex(x => x.name == sheetName) != -1;
         public SheetInfo GetSheetInfo(string sheetName) => _sheetInfos.Find(x => x.name == sheetName);
         
         public string GetAssetFilePath(string sheetTitle) => GetSheetInfo(sheetTitle).addressableType == AddressableType.Resources
             ? ResourcesPath 
             : AddressablePath;
+
     }
 }

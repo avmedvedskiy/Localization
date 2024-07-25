@@ -38,7 +38,7 @@ namespace LocalizationPackage
         /// </summary>
         public static async UniTask LoadAsync(string sheetName)
         {
-            if (!_storage.ContainsKey(sheetName))
+            if (!_storage.ContainsKey(sheetName) && Settings.Contains(sheetName))
                 _storage.Add(sheetName, await LocalizationLoader.LoadSheetAsync(CurrentLanguage, sheetName));
         }
 
