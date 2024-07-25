@@ -1,13 +1,11 @@
 {
-    "name": "Unity.Localization.Editor",
+    "name": "Localization.TMP.Runtime",
     "rootNamespace": "",
     "references": [
-        "Unity.Localization.Runtime",
-        "Unity.Addressables.Editor"
+        "Unity.TextMeshPro",
+        "Localization.Runtime"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
@@ -16,9 +14,9 @@
     "defineConstraints": [],
     "versionDefines": [
         {
-            "name": "com.unity.addressables",
+            "name": "com.unity.textmeshpro",
             "expression": "",
-            "define": "USE_ADDRESSABLES"
+            "define": "TMP"
         }
     ],
     "noEngineReferences": false

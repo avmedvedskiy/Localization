@@ -275,7 +275,8 @@ namespace LocalizationPackage
                 {
                     //clear groups
                     var keys = group.entries.ToList();
-                    group.RemoveAssetEntries(keys);
+                    foreach(var k in keys)
+                        group.RemoveAssetEntry(k);
                 }
                 
             }

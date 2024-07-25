@@ -1,13 +1,14 @@
 {
-    "name": "Unity.Localization.Runtime",
+    "name": "Localization.Editor",
     "rootNamespace": "",
     "references": [
-        "Unity.Addressables",
-        "Unity.ResourceManager",
-        "UniTask",
-        "UniTask.Addressables"
+        "Localization.Runtime",
+        "Unity.Addressables.Editor",
+        "Unity.Addressables"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
