@@ -69,7 +69,12 @@ namespace LocalizationPackage
             }
             return $"#!#{key}#!#";
         }
-        
+
+        public static string GetFormat(string key, object value) => string.Format(Get(key), value);
+        public static string GetFormat(string key, object value1,object value2) => string.Format(Get(key), value1,value2);
+        public static string GetFormat(string key, object value1,object value2, object value3) => string.Format(Get(key), value1,value2,value3);
+        public static string GetFormat(string key, params object[] values) => string.Format(Get(key),values);
+
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void CleanUpFastMode()
