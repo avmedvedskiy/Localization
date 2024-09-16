@@ -150,7 +150,7 @@ namespace LocalizationPackage
                 {
                     var langName = languages[i - 1];
                     var langData = resultLanguages[langName];
-                    var value = line[i];
+                    var value = line[i].UnescapeXML();
                     if (string.IsNullOrEmpty(value))
                         AddError($"Empty Key {key} in sheet {sheetTitle} (lang={langName})", langName);
 
