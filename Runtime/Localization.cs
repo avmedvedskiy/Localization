@@ -11,6 +11,7 @@ namespace LocalizationPackage
     {
         public static event Action OnLanguageChanged;
         public static SystemLanguage CurrentLanguage { get; private set; }
+        public static List<SystemLanguage> AllLanguages => Settings.LanguageFilter;
         private static LocalizationSettings Settings => SettingsProvider.Settings;
         
         //maybe need to collapse into one dictionary
