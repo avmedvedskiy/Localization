@@ -1,3 +1,5 @@
+using System;
+
 namespace LocalizationPackage
 {
     public static class StringExtensions
@@ -16,6 +18,11 @@ namespace LocalizationPackage
                 .Replace("&gt;", ">")
                 .Replace("&lt;", "<")
                 .Replace("&amp;", "&");
+        }
+
+        public static string ConvertNewLine(this string s)
+        {
+            return s.Replace("\\n", Environment.NewLine);
         }
     }
 }
