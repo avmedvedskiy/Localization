@@ -17,12 +17,9 @@ namespace LocalizationPackage
                 .Replace("&quot;", "\"")
                 .Replace("&gt;", ">")
                 .Replace("&lt;", "<")
-                .Replace("&amp;", "&");
-        }
-
-        public static string ConvertNewLine(this string s)
-        {
-            return s.Replace("\\n", Environment.NewLine);
+                .Replace("&amp;", "&")
+                .Replace(@"\r\n", Environment.NewLine)
+                .Replace(@"\n", Environment.NewLine);
         }
     }
 }
