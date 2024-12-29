@@ -2,7 +2,6 @@ using System;
 using TMPro;
 using UnityEngine;
 
-#if TMP
 namespace LocalizationPackage.TextMeshPro
 {
     [RequireComponent(typeof(TextMeshProUGUI))]
@@ -45,5 +44,3 @@ namespace LocalizationPackage.TextMeshPro
         }
     }
 }
-
-#endif
