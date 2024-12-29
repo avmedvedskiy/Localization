@@ -4,7 +4,7 @@ using UnityEngine;
 namespace LocalizationPackage
 {
     [CustomEditor(typeof(LocalizationSettings))]
-    public class LocalizationSettingsEditor : Editor
+    public class LocalizationSettingsEditor : UnityEditor.Editor
     {
         private readonly LocalizationEditorTools _tools = new();
         public override void OnInspectorGUI()
