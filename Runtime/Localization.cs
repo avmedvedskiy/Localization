@@ -61,6 +61,11 @@ namespace LocalizationPackage
             OnLanguageChanged?.Invoke();
         }
 
+        public static Sprite GetFlag(SystemLanguage language)
+        {
+           return Settings.FlagContainer.Get(language);
+        }
+
         public static string Get(string key)
         {
             foreach (var sheets in _storage)

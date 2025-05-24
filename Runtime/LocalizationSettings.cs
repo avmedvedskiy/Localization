@@ -43,6 +43,8 @@ namespace LocalizationPackage
 
         [SerializeField] private string _resourcesPath = RESOURCES_PATH;
         [SerializeField] private string _addressablePath = ADDRESSABLE_SHEETS_PATH;
+
+        [SerializeField] private LocalizationFlagContainer _flagContainer;
         
         [Space(10)] [SerializeField] private SystemLanguage _editorPreviewCode = SystemLanguage.English;
 
@@ -70,8 +72,8 @@ namespace LocalizationPackage
         public List<SystemLanguage> LanguageFilter => _languageFilter;
         public string AddressablePath => _addressablePath;
         public string ResourcesPath => _resourcesPath;
+        public LocalizationFlagContainer FlagContainer => _flagContainer;
         public SystemLanguage EditorPreviewCode => _editorPreviewCode;
-
         public bool Contains(string sheetName) => _sheetInfos.FindIndex(x => x.name == sheetName) != -1;
         public SheetInfo GetSheetInfo(string sheetName) => _sheetInfos.Find(x => x.name == sheetName);
         
