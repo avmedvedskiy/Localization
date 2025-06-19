@@ -21,12 +21,15 @@ namespace LocalizationPackage
             var useSystemLanguagePerDefault = Settings.UseSystemLanguagePerDefault;
             var defaultLangCode = Settings.DefaultLangCode;
 
-            var lastLang = (SystemLanguage)PlayerPrefs.GetInt(LAST_LANGUAGE_KEY, (int)SystemLanguage.English);
-            if (IsLanguageAvailable(lastLang))
+            if (PlayerPrefs.HasKey(LAST_LANGUAGE_KEY))
             {
-                return lastLang;
+                var lastLang = (SystemLanguage)PlayerPrefs.GetInt(LAST_LANGUAGE_KEY, (int)SystemLanguage.English);
+                if (IsLanguageAvailable(lastLang))
+                {
+                    return lastLang;
+                }
             }
-
+            
             if (useSystemLanguagePerDefault)
             {
                 SystemLanguage localLang = Application.systemLanguage;
@@ -39,6 +42,7 @@ namespace LocalizationPackage
             return defaultLangCode;
         }
 
+        
         private static bool IsLanguageAvailable(SystemLanguage code) => Settings.LanguageFilter.Contains(code);
         
     }
